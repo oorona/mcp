@@ -1,0 +1,6 @@
+# mcp/requirements.txt
+mcp>=1.6.0
+fastapi
+uvicorn[standard]
+python-dotenv
+httpx[http2] # For making HTTP requests to the API

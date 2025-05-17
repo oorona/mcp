@@ -1,0 +1,63 @@
+---
+services:
+  timemcpo:
+    build:
+      context: .
+      dockerfile: Dockerfile.timemcpo
+    container_name: timemcpo
+    ports:
+      - "7000:7000"
+    restart: unless-stopped
+    networks:
+      - llmnet
+
+  ytmcp:
+    build:
+      context: .
+      dockerfile: Dockerfile.ytmcp
+    container_name: ytmcp
+    ports:
+      - "6000:6000"
+    restart: unless-stopped
+    networks:
+      - llmnet
+
+  ytmcpo:
+    build:
+      context: .
+      dockerfile: Dockerfile.ytmcpo
+    container_name: ytmcpo
+    ports:
+      - "7500:7500"
+    restart: unless-stopped
+    networks:
+      - llmnet
+
+  usersmcp:
+    build:
+       context: .
+       dockerfile: Dockerfile.usersmcp
+    container_name: usersmcp
+    restart: unless-stopped
+    ports:
+      - "6600:6600" # Map host port 6600 to container port 6600
+    environment:
+      - USER_API_BASE_URL=http://usercontext_api:9000/api/v1
+      - LOG_LEVEL=DEBUG
+    networks:
+      - llmnet
+
+  usersmcpo:
+    build:
+      context: .
+      dockerfile: Dockerfile.usersmcpo
+    container_name: usersmcpo
+    ports:
+      - "7600:7600"
+    restart: unless-stopped
+    networks:
+      - llmnet
+
+networks:
+  llmnet:
+    external: true
