@@ -18,7 +18,7 @@ COPY servers/youtube/server.py .
 COPY servers/youtube/.env .
 
 # Expose the port the server runs on
-EXPOSE 6000
+EXPOSE 6500
 
 # Command to run the server
-CMD ["python", "server.py"] 
+CMD ["python", "server.py","--host", "0.0.0.0", "--port", "6500"] 

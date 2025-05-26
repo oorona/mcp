@@ -3,10 +3,9 @@ import logging
 from typing import List, Dict, Any
 from urllib.parse import urlparse, parse_qs
 from dotenv import load_dotenv
-from mcp.server.fastmcp import FastMCP
 import httpx
 
-
+from fastmcp import FastMCP
 
 load_dotenv()
 
@@ -19,9 +18,8 @@ USER_MCP_PORT = int(os.getenv("USER_MCP_PORT", "6600"))
 
 
 mcp = FastMCP(
-    "User history",
+    name="User history",
     instructions="Retrieve las message for a given user_id.",
-    port=USER_MCP_PORT,
 )
 
 
@@ -73,7 +71,11 @@ async def get_user_context(
 
 
 def main():
-    mcp.run(transport="sse")
+    mcp.run(transport="streamable-http",
+        host="0.0.0.0",
+        port=USER_MCP_PORT,
+        log_level="info"
+    )
 
 
 if __name__ == "__main__":

@@ -2,5 +2,4 @@ FROM python:3.11-slim
 WORKDIR /app
 RUN pip install mcpo uv
 # Replace with your MCP server command; example: uvx mcp-server-time
-CMD ["uvx", "mcpo", "--port", "7600", "--server-type=streamable_http", "--", "http://usersmcp:6600/mcp"]
-
+CMD ["uvx", "mcpo", "--port", "7100", "--server-type=streamable_http", "--", "http://giphymcp:6100/mcp"]

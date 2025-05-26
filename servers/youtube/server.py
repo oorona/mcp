@@ -5,10 +5,11 @@ from typing import Any, Dict, Annotated
 from urllib.parse import urlparse, parse_qs
 from dotenv import load_dotenv
 import aiohttp
-from mcp.server.fastmcp import FastMCP
 from pydantic import Field
 from youtube_transcript_api import YouTubeTranscriptApi, NoTranscriptFound, TranscriptsDisabled
 
+
+from fastmcp import FastMCP
 # Load environment variables from .env file
 load_dotenv()
 
@@ -47,13 +48,12 @@ if not YOUTUBE_API_KEY:
     raise ValueError("YOUTUBE_API_KEY environment variable is required")
 
 YOUTUBE_API_BASE = "https://www.googleapis.com/youtube/v3"
-YOUTUBE_MCP_SERVER_PORT = int(os.getenv("YOUTUBE_MCP_SERVER_PORT", "6000"))
+YOUTUBE_MCP_SERVER_PORT = int(os.getenv("YOUTUBE_MCP_SERVER_PORT", "6500"))
 
 mcp = FastMCP(
-    "Youtube",
-    instructions="Retrieve the transcript or video details for a given YouTube video. Prioritizes manual transcripts, then auto-generated transcripts.",
-    port=YOUTUBE_MCP_SERVER_PORT,
-)
+    name="Youtube",
+    instructions="Retrieve the transcript or video details for a given YouTube video. Prioritizes manual transcripts, then auto-generated transcripts."
+    )
 
 logger.info("Initializing YouTubeTranscriptApi")
 youtube_transcript_api = YouTubeTranscriptApi()
@@ -313,7 +313,11 @@ async def get_youtube_video_transcript(
 
 def main():
     logger.info(f"Starting Youtube MCP Server on port {YOUTUBE_MCP_SERVER_PORT} with log level {LOG_LEVEL_ENV}")
-    mcp.run(transport="sse")
+    mcp.run(transport="streamable-http",
+        host="0.0.0.0",
+        port=YOUTUBE_MCP_SERVER_PORT,
+        log_level=LOG_LEVEL_ENV.lower()
+    )
 
 if __name__ == "__main__":
     main()

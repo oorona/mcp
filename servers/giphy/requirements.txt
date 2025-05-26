@@ -1,6 +1,8 @@
 # mcp/requirements.txt
 fastmcp
+pydantic
 fastapi
 uvicorn[standard]
+aiohttp
 python-dotenv
-httpx[http2] # For making HTTP requests to the API
+typing-extensions
