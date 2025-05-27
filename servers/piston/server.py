@@ -154,97 +154,174 @@ async def execute_code(
         logger.error(f"Tool 'execute_code': Unexpected error during code execution for language '{language}': {e}", exc_info=True)
         return {"error": "An unexpected error occurred during code execution", "details": str(e)}
 
-@mcp.tool()
-async def get_piston_runtimes() -> Dict[str, Any]:
-    # MODIFIED: Enhanced docstring to link its utility to code execution
-    """
-    Fetches the list of available programming languages and their specific versions supported for code execution by the Piston API.
-    This tool is a helper for the 'execute_code' tool. Use it to discover valid 'language' and 'version' parameters
-    before attempting to execute code.
-    Output: A dictionary containing a list of 'runtimes'. Each runtime object specifies:
-        - 'language': The name of the language.
-        - 'version': The specific version of the language.
-        - 'aliases': A list of alternative names for the language.
-        - 'runtime' (optional): A string indicating a specific runtime environment (e.g., 'node', 'python').
-    Returns an error structure if the API request fails.
-    """
-    api_url = f"{PISTON_API_BASE_URL}/runtimes"
-    logger.info(f"Tool 'get_piston_runtimes': Requesting available runtimes for code execution from {api_url}")
+#@mcp.tool()
+# async def get_piston_runtimes() -> Dict[str, Any]:
+#     # MODIFIED: Enhanced docstring to link its utility to code execution
+#     """
+#     Fetches the list of available programming languages and their specific versions supported for code execution by the Piston API.
+#     This tool is a helper for the 'execute_code' tool. Use it to discover valid 'language' and 'version' parameters
+#     before attempting to execute code.
+#     Output: A dictionary containing a list of 'runtimes'. Each runtime object specifies:
+#         - 'language': The name of the language.
+#         - 'version': The specific version of the language.
+#         - 'aliases': A list of alternative names for the language.
+#         - 'runtime' (optional): A string indicating a specific runtime environment (e.g., 'node', 'python').
+#     Returns an error structure if the API request fails.
+#     """
+#     api_url = f"{PISTON_API_BASE_URL}/runtimes"
+#     logger.info(f"Tool 'get_piston_runtimes': Requesting available runtimes for code execution from {api_url}")
 
+#     try:
+#         async with httpx.AsyncClient() as client:
+#             response = await client.get(api_url, timeout=10.0)
+#             response.raise_for_status()
+#             runtimes_data = response.json()
+#             logger.info(f"Tool 'get_piston_runtimes': Successfully retrieved {len(runtimes_data)} runtimes available for code execution.")
+#             return {"runtimes": runtimes_data}
+#     except httpx.HTTPStatusError as e:
+#         logger.error(f"Tool 'get_piston_runtimes': API request to fetch runtimes failed with status {e.response.status_code}: {e.response.text}")
+#         return {"error": "Failed to fetch runtimes from Piston API", "status_code": e.response.status_code, "details": e.response.text}
+#     except httpx.RequestError as e:
+#         logger.error(f"Tool 'get_piston_runtimes': Could not connect to Piston API at {api_url} to fetch runtimes: {e}")
+#         return {"error": "Network error connecting to Piston API for runtimes", "details": str(e)}
+#     except Exception as e:
+#         logger.error(f"Tool 'get_piston_runtimes': An unexpected error occurred while fetching runtimes: {e}", exc_info=True)
+#         return {"error": "An unexpected error occurred while fetching runtimes for code execution", "details": str(e)}
+
+@mcp.tool()
+async def get_piston_language_version(language: str) -> Dict[str, Any]:
+    """
+#     Fetches the list of specific versions supported for code execution by the Piston API.
+#     This tool is a helper for the 'execute_code' tool. Use it to discover valid 'language' and 'version' parameters
+#     before attempting to execute code.
+#     Output: A dictionary containing a list of 'runtimes'. Each runtime object specifies:
+#         - 'language': The name of the language.
+#         - 'version': The specific version of the language.
+#         - 'aliases': A list of alternative names for the language.
+#     Returns an error structure if the API request fails.
+#     """
+    requested_language_lower = language.lower()
+    logger.info(f"Piston tool: Effective PISTON_API_BASE_URL = '{PISTON_API_BASE_URL}'")
+    runtimes_url = f"{PISTON_API_BASE_URL.rstrip('/')}/runtimes"
     try:
         async with httpx.AsyncClient() as client:
-            response = await client.get(api_url, timeout=10.0)
+            response = await client.get(runtimes_url, timeout=15.0)
+            if response.status_code != 200:
+                logger.warning(f"Piston Resource: Received status code {response.status_code} from Piston API at {runtimes_url}. Response text: {response.text[:500]}...") # Log first 500 chars of response
             response.raise_for_status()
-            runtimes_data = response.json()
-            logger.info(f"Tool 'get_piston_runtimes': Successfully retrieved {len(runtimes_data)} runtimes available for code execution.")
-            return {"runtimes": runtimes_data}
+            all_runtimes_data = response.json()
+    
+
+            if not isinstance(all_runtimes_data, list):
+                logger.error(f"Piston API ({runtimes_url}) did not return a list. Response: {all_runtimes_data}")
+                return f"Error: Piston runtimes API did not return the expected list format while searching for '{language}'."
+
+            found_language_details = None
+            for lang_data in all_runtimes_data:
+                if not isinstance(lang_data, dict):
+                    logger.warning(f"Skipping invalid runtime entry in Piston response: {lang_data}")
+                    continue
+
+                piston_lang_name = lang_data.get("language", "").lower()
+                piston_aliases = [str(alias).lower() for alias in lang_data.get("aliases", []) if isinstance(alias, (str, int, float))]
+
+                if piston_lang_name == requested_language_lower or requested_language_lower in piston_aliases:
+                    found_language_details = lang_data
+                    break
+            
+            if found_language_details:
+                actual_lang_name = found_language_details.get("language")
+                lang_version = found_language_details.get("version")
+                aliases = found_language_details.get("aliases", [])
+                aliases_display = ", ".join(aliases) if aliases else "none"
+                result_string = f"Language: {actual_lang_name}, Version: {lang_version}, Aliases: [{aliases_display}]"
+                logger.info(f"Successfully found runtime for '{language}': {result_string}")
+                return {
+                    "language": actual_lang_name,
+                    "version": lang_version,
+                    "aliases": aliases,
+                }
+            else:
+                logger.info(f"Language '{language}' not found in Piston runtimes after checking {len(all_runtimes_data)} entries.")
+                return {"Info": f"Runtime information for language '{language}' not found in Piston."}
+
     except httpx.HTTPStatusError as e:
-        logger.error(f"Tool 'get_piston_runtimes': API request to fetch runtimes failed with status {e.response.status_code}: {e.response.text}")
-        return {"error": "Failed to fetch runtimes from Piston API", "status_code": e.response.status_code, "details": e.response.text}
+        # This block will be hit if response.raise_for_status() triggers for 4xx/5xx
+        logger.error(f"Piston Resource: HTTP error {e.response.status_code} when calling {e.request.url}. Response: {e.response.text[:500]}", exc_info=True) # Log more details
+        return {"Error": f"Could not fetch Piston runtimes for '{language}'. API Error (status {e.response.status_code})."} 
     except httpx.RequestError as e:
-        logger.error(f"Tool 'get_piston_runtimes': Could not connect to Piston API at {api_url} to fetch runtimes: {e}")
-        return {"error": "Network error connecting to Piston API for runtimes", "details": str(e)}
+        logger.error(f"Piston Resource: Request error connecting to Piston API for '{language}' at {e.request.url}: {e}", exc_info=True)
+        return {"Error": f"Could not connect to Piston API to get runtime for '{language}'."}
     except Exception as e:
-        logger.error(f"Tool 'get_piston_runtimes': An unexpected error occurred while fetching runtimes: {e}", exc_info=True)
-        return {"error": "An unexpected error occurred while fetching runtimes for code execution", "details": str(e)}
+        logger.error(f"Piston Resource: Unexpected error processing Piston runtimes for '{language}': {e}", exc_info=True)
+        return {"Error": f"An unexpected error occurred while fetching runtime for '{language}'."}
 
-# --- Main Execution ---
 
-@mcp.resource(uri="resource://supported_runtimes")
-async def piston_supported_runtimes() -> str:
-    """
-    Fetches the supported languages, their current versions, and aliases from the Piston API.
-    This information is provided as context to help select compatible runtimes for code execution.
-    The format is: 'Language (version: X.Y.Z, aliases: [alias1, alias2]); ...'
-    """
-    runtimes_url = f"{PISTON_API_BASE_URL.rstrip('/')}/api/v2/runtimes"
-    logger.info(f"Fetching Piston runtimes from: {runtimes_url}")
+@mcp.resource(uri="language://{language}/version")
+async def get_language_version_resource(language: str) -> Dict[str, Any]:
+    """Retrieves information about a version availables for specific language."""
+    requested_language_lower = language.lower()
+
+    logger.info(f"Piston Resource: Effective PISTON_API_BASE_URL = '{PISTON_API_BASE_URL}'")
+    
+    runtimes_url = f"{PISTON_API_BASE_URL.rstrip('/')}/runtimes"
+    
+    logger.critical(f"Piston Resource: Attempting to call Piston API at derived URL: '{runtimes_url}' for language '{language}'")
+    
+    logger.info(f"Requesting Piston runtime version for language '{language}' using resource URI language://{language}/version")
 
     try:
         async with httpx.AsyncClient() as client:
             response = await client.get(runtimes_url, timeout=15.0)
-            response.raise_for_status()  # Raises an exception for 4xx or 5xx status codes
-            runtimes_data = response.json()
+            if response.status_code != 200:
+                logger.warning(f"Piston Resource: Received status code {response.status_code} from Piston API at {runtimes_url}. Response text: {response.text[:500]}...") # Log first 500 chars of response
+            response.raise_for_status()
+            all_runtimes_data = response.json()
+    
 
-            if not isinstance(runtimes_data, list):
-                logger.error(f"Piston API at {runtimes_url} did not return a list. Response: {runtimes_data}")
-                return "Error: Piston runtimes API did not return the expected list format."
+            if not isinstance(all_runtimes_data, list):
+                logger.error(f"Piston API ({runtimes_url}) did not return a list. Response: {all_runtimes_data}")
+                return f"Error: Piston runtimes API did not return the expected list format while searching for '{language}'."
 
-            formatted_runtimes = []
-            for lang_data in runtimes_data:
+            found_language_details = None
+            for lang_data in all_runtimes_data:
                 if not isinstance(lang_data, dict):
-                    logger.warning(f"Skipping invalid runtime entry: {lang_data}")
-                    continue # Skip if the entry isn't a dictionary
+                    logger.warning(f"Skipping invalid runtime entry in Piston response: {lang_data}")
+                    continue
 
-                lang_name = lang_data.get("language")
-                lang_version = lang_data.get("version")
-                aliases = lang_data.get("aliases", []) # Default to empty list if 'aliases' key is missing
-                
-                # Ensure aliases is a list and join them, otherwise use a placeholder
-                aliases_str = ", ".join(aliases) if isinstance(aliases, list) else "N/A"
+                piston_lang_name = lang_data.get("language", "").lower()
+                piston_aliases = [str(alias).lower() for alias in lang_data.get("aliases", []) if isinstance(alias, (str, int, float))]
 
-                if lang_name and lang_version:
-                    formatted_runtimes.append(
-                        f"{lang_name} (version: {lang_version}, aliases: [{aliases_str}])"
-                    )
+                if piston_lang_name == requested_language_lower or requested_language_lower in piston_aliases:
+                    found_language_details = lang_data
+                    break
             
-            if not formatted_runtimes:
-                logger.info("No runtimes data found or Piston API returned an empty list.")
-                return "Piston Runtimes: No runtimes data currently available from the Piston API."
-
-            result_string = "Available Piston Runtimes: " + "; ".join(formatted_runtimes)
-            logger.info(f"Successfully fetched and formatted Piston runtimes: {len(formatted_runtimes)} entries.")
-            return result_string
-
+            if found_language_details:
+                actual_lang_name = found_language_details.get("language")
+                lang_version = found_language_details.get("version")
+                aliases = found_language_details.get("aliases", [])
+                aliases_display = ", ".join(aliases) if aliases else "none"
+                result_string = f"Language: {actual_lang_name}, Version: {lang_version}, Aliases: [{aliases_display}]"
+                logger.info(f"Successfully found runtime for '{language}': {result_string}")
+                return {
+                    "language": actual_lang_name,
+                    "version": lang_version,
+                    "aliases": aliases,
+                }
+            else:
+                logger.info(f"Language '{language}' not found in Piston runtimes after checking {len(all_runtimes_data)} entries.")
+                return {"Info": f"Runtime information for language '{language}' not found in Piston."}
     except httpx.HTTPStatusError as e:
-        logger.error(f"HTTP error fetching Piston runtimes: {e.response.status_code} - {e.response.text}", exc_info=True)
-        return f"Error: Could not fetch Piston runtimes. API Error (status {e.response.status_code})."
+        # This block will be hit if response.raise_for_status() triggers for 4xx/5xx
+        logger.error(f"Piston Resource: HTTP error {e.response.status_code} when calling {e.request.url}. Response: {e.response.text[:500]}", exc_info=True) # Log more details
+        return {"Error": f"Could not fetch Piston runtimes for '{language}'. API Error (status {e.response.status_code})."} 
     except httpx.RequestError as e:
-        logger.error(f"Request error fetching Piston runtimes: {e}", exc_info=True)
-        return f"Error: Could not connect to Piston API at {runtimes_url}."
+        logger.error(f"Piston Resource: Request error connecting to Piston API for '{language}' at {e.request.url}: {e}", exc_info=True)
+        return {"Error": f"Could not connect to Piston API to get runtime for '{language}'."}
     except Exception as e:
-        logger.error(f"Unexpected error fetching Piston runtimes: {e}", exc_info=True)
-        return "Error: An unexpected error occurred while fetching Piston runtimes."
+        logger.error(f"Piston Resource: Unexpected error processing Piston runtimes for '{language}': {e}", exc_info=True)
+        return {"Error": f"An unexpected error occurred while fetching runtime for '{language}'."}
+
 
 def main():
     logger.info(f"Starting Piston Code Execution MCP Server on port {PISTON_MCP_PORT} with log level {LOG_LEVEL_ENV}")

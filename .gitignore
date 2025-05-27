@@ -1,2 +1,3 @@
 servers/**/.env
 .git
+client/.venv

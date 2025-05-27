@@ -164,7 +164,7 @@ async def get_random_giphy_image( # Renamed tool function
 
         if not api_data_list:
             logger.warning(f"No images found for query: '{query}'")
-            return {"info": f"No images found for query: '{query}'.", "image_url": None} # Changed key
+            return {"info": f"No images found for query: '{query}'.", "image_url": None} 
 
         suitable_images = []
         for item_data in api_data_list:
@@ -185,7 +185,7 @@ async def get_random_giphy_image( # Renamed tool function
         logger.info(f"Randomly selected image ID: {chosen_image['id']}, Title: '{chosen_image['title']}' for query '{query}'")
 
         return {
-            "image_url": chosen_image["url"], # Changed key
+            "image_url": chosen_image["url"], 
             "title": chosen_image["title"],
             "id": chosen_image["id"],
             "giphy_page_url": chosen_image["giphy_page_url"],
@@ -200,7 +200,7 @@ async def get_random_giphy_image( # Renamed tool function
         return {"error": f"An unexpected error occurred: {str(e)}"}
 
 @mcp.tool()
-async def get_top_trending_giphy_image() -> Dict[str, Any]: # Renamed tool function
+async def get_top_trending_giphy_image() -> Dict[str, Any]:
     """
     Fetches the current top trending image (prioritizing WebP) from Giphy.
     The image rendition is chosen to be suitable for Discord.
