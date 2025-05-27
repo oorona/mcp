@@ -89,32 +89,42 @@ class PistonRuntimesResponse(RootModel[List[PistonRuntime]]):
 # --- MCP Tools ---
 @mcp.tool()
 async def execute_code(
-    language: Annotated[str, Field(description="The programming language of the code to be executed (e.g., 'python', 'javascript'). Use 'get_piston_runtimes' to discover available languages.")],
-    version: Annotated[str, Field(description="The specific version of the programming language to use for execution (e.g., '3.10.0' for python). Use 'get_piston_runtimes' to find supported versions.")],
+    language: Annotated[str, Field(description="The programming language of the code to be executed (e.g., 'python', 'javascript'). The system will attempt to find a suitable version.")],
     code: Annotated[str, Field(description="The actual source code snippet to execute.")],
     file_name: Annotated[Optional[str], Field(description="Optional name for the file containing the code (e.g., 'main.py', 'script.js'). Defaults to 'main.py'. This is primarily for context if the code expects a filename.")] = "main.py",
     stdin: Annotated[Optional[str], Field(description="Standard input (stdin) to be passed to the executing code. Useful for scripts that read from stdin.")] = None,
     args: Annotated[Optional[List[str]], Field(description="A list of command-line arguments to be passed to the executed code.")] = None
 ) -> Dict[str, Any]:
-    # MODIFIED: Enhanced docstring for clarity on code execution
     """
-    Executes a given snippet of source code in a specified programming language and version using the Piston API.
-    This tool is essential for running code to get results, test algorithms, or perform dynamic computations.
-    The Piston API (public instance at https://emkc.org/api/v2/piston) handles the actual code execution in a sandboxed environment.
-    Input: language, version, and the code itself. Optional: stdin, command-line arguments, and a filename.
+    Executes a given snippet of source code in a specified programming language using the Piston API.
+    Input: language and the code itself. Optional: stdin, command-line arguments, and a filename.
     Output: A dictionary containing the Piston API's response, which includes:
         - 'language': The language used.
         - 'version': The version of the language used.
         - 'run': An object with 'stdout', 'stderr', 'output' (combined stdout/stderr), 'code' (exit code), and 'signal' (if any).
         - 'compile' (optional): An object with details if a compilation step was involved, similar to 'run'.
-    Returns an error structure if the API request fails or an unexpected error occurs during the process.
+    Returns an error structure if the API request fails, a version cannot be found, or an unexpected error occurs.
     """
-    api_url = f"{PISTON_API_BASE_URL}/execute"
-    logger.info(f"Tool 'execute_code': Attempting code execution for language '{language}' (version '{version}') via {api_url}")
+    logger.info(f"Tool 'execute_code': Attempting code execution for language '{language}'. First, fetching version info.")
 
+    # Get the language version using the get_piston_language_version tool
+    version_info = await get_piston_language_version(language)
+
+    if "Error" in version_info or "Info" in version_info and "not found" in version_info.get("Info", ""):
+        logger.error(f"Tool 'execute_code': Could not find a supported version for language '{language}'. Response: {version_info}")
+        return {"error": f"Could not determine version for language '{language}'.", "details": version_info.get("Error") or version_info.get("Info")}
+
+    retrieved_version = version_info.get("version")
+    if not retrieved_version:
+        logger.error(f"Tool 'execute_code': Version info for '{language}' is missing the 'version' field. Response: {version_info}")
+        return {"error": f"Version information for language '{language}' is incomplete.", "details": version_info}
+
+    logger.info(f"Tool 'execute_code': Using version '{retrieved_version}' for language '{language}'.")
+
+    api_url = f"{PISTON_API_BASE_URL}/execute"
     request_payload = PistonRequest(
-        language=language,
-        version=version,
+        language=language, # Or version_info.get("language", language) if you want to use the exact language name returned
+        version=retrieved_version,
         files=[PistonFile(name=file_name, content=code)],
         stdin=stdin,
         args=args
@@ -122,18 +132,18 @@ async def execute_code(
 
     try:
         async with httpx.AsyncClient() as client:
-            response = await client.post(api_url, json=request_payload, timeout=30.0) # Timeout for potentially long-running code
-            logger.info(f"Tool 'execute_code': Received response from Piston API for code execution. Status: {response}")
-            if response.status_code == 400: # Piston API often gives detailed error messages for 400
+            response = await client.post(api_url, json=request_payload, timeout=30.0)
+            logger.debug(f"Tool 'execute_code': Raw Piston API response status: {response.status_code}, content: {response.text[:500]}")
+            
+            if response.status_code == 400:
                 error_data = response.json()
                 message = error_data.get("message", response.text)
-                logger.error(f"Tool 'execute_code': Piston API Bad Request for language '{language}': {message}")
+                logger.error(f"Tool 'execute_code': Piston API Bad Request for language '{language}' version '{retrieved_version}': {message}")
                 return {"error": "Piston API Bad Request during code execution", "message": message, "details": error_data}
 
-            response.raise_for_status() # For other HTTP errors
+            response.raise_for_status()
             result = response.json()
-            logger.info(f"Tool 'execute_code': Received result from Piston API for code execution. Status: {result}")
-
+            
             logger.info(f"Tool 'execute_code': Successfully executed code. Language: {result.get('language')}, Version: {result.get('version')}, Exit Code: {result.get('run', {}).get('code')}")
             return result
 
@@ -144,15 +154,16 @@ async def execute_code(
             if "message" in error_json:
                 error_detail = error_json["message"]
         except Exception:
-            pass
-        logger.error(f"Tool 'execute_code': API request for code execution failed with status {e.response.status_code}: {error_detail} for language '{language}'")
+            pass # Keep original text if JSON parsing fails or message not present
+        logger.error(f"Tool 'execute_code': API request for code execution failed with status {e.response.status_code}: {error_detail} for language '{language}' version '{retrieved_version}'")
         return {"error": "API request for code execution failed", "status_code": e.response.status_code, "details": error_detail}
     except httpx.RequestError as e:
         logger.error(f"Tool 'execute_code': Could not connect to Piston API at {api_url} for code execution: {e}")
         return {"error": "Network error connecting to Piston API for code execution", "details": str(e)}
     except Exception as e:
-        logger.error(f"Tool 'execute_code': Unexpected error during code execution for language '{language}': {e}", exc_info=True)
+        logger.error(f"Tool 'execute_code': Unexpected error during code execution for language '{language}' version '{retrieved_version}': {e}", exc_info=True)
         return {"error": "An unexpected error occurred during code execution", "details": str(e)}
+
 
 #@mcp.tool()
 # async def get_piston_runtimes() -> Dict[str, Any]:
