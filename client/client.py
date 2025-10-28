@@ -3,7 +3,7 @@
 MCP Multi-Server Client
 
 A production client for testing and interacting with MCP servers.
-Supports all servers in the MCP ecosystem: Giphy (Enhanced), YouTube (Enhanced), UserContext, 
+Supports all servers in the MCP ecosystem: Giphy (Enhanced), YouTube (Enhanced),
 WolframAlpha (Enhanced), Piston (Enhanced), CVE (Enhanced), and Tenor (Enhanced).
 
 Features:
@@ -40,7 +40,6 @@ from typing import Dict, List, Any, Optional
 SERVERS = {
     "giphy": {"port": 6100, "description": "Enhanced: GIF/sticker search, trending, random, translate, categories, autocomplete"},
     "youtube": {"port": 6500, "description": "Enhanced: Video search, transcript checking, trending, comments, channel info"},
-    "usercontext": {"port": 6600, "description": "User message history"},
     "wolframalpha": {"port": 6700, "description": "Enhanced: Mathematical calculations, unit conversions, scientific data, equation solving, statistical analysis, definitions"},
     "piston": {"port": 6800, "description": "Enhanced: Auto-version selection, multiple language support"},
     "cve": {"port": 6900, "description": "Enhanced: Comprehensive vulnerability analysis and statistics"},
@@ -106,7 +105,6 @@ class MCPClient:
             container_map = {
                 "giphy": "giphymcp",
                 "youtube": "ytmcp", 
-                "usercontext": "usersmcp",
                 "wolframalpha": "wamcp",
                 "piston": "pistonmcp",
                 "cve": "cvemcp",
@@ -179,7 +177,6 @@ class MCPClient:
             container_map = {
                 "giphy": "giphymcp",
                 "youtube": "ytmcp", 
-                "usercontext": "usersmcp",
                 "wolframalpha": "wamcp",
                 "piston": "pistonmcp",
                 "cve": "cvemcp",
@@ -234,16 +231,16 @@ class MCPClient:
         
         successful = [r for r in results if r["status"] == "success"]
         failed = [r for r in results if r["status"] == "error"]
-        
+
         print(f"✅ Connected: {len(successful)}/{len(SERVERS)} servers")
         for result in successful:
             print(f"   • {result['server']}: {len(result['tools'])} tools - {result['description']}")
-        
+
         if failed:
             print(f"\n❌ Failed: {len(failed)} servers")
             for result in failed:
                 print(f"   • {result['server']}: {result['error']}")
-        
+
         return results
 
     async def demo_youtube(self) -> None:
