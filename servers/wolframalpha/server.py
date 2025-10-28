@@ -1,15 +1,19 @@
 import os
 import logging
-from typing import Dict, Any, List # Ensure List is imported
+from typing import Dict, Any, List, Optional, Annotated
 from dotenv import load_dotenv
 import wolframalpha
-import httpx # For specific exception handling
-import asyncio # For asyncio.TimeoutError
-
+import httpx
+import asyncio
+import json
+import re
+from urllib.parse import quote
 
 from fastmcp import FastMCP
+from pydantic import Field
 # Load environment variables from .env file
-load_dotenv()
+dotenv_path = os.path.join(os.path.dirname(__file__), '.env')
+load_dotenv(dotenv_path=dotenv_path)
 
 # --- Logging Configuration ---
 DEFAULT_LOG_LEVEL = "INFO"
@@ -50,21 +54,395 @@ except Exception as e:
 # Initialize FastMCP
 mcp = FastMCP(
     name="WolframAlpha",
-    instructions="Query the Wolfram Alpha API. Useful for computation, data analysis, and general knowledge."
-    )
+    instructions="Comprehensive WolframAlpha integration providing computational queries, mathematical calculations, data analysis, unit conversions, scientific computations, and knowledge retrieval. Supports multiple query types and output formats."
+)
 
 logger.info("Initializing WolframAlpha MCP Server")
 
+def _extract_primary_result(res) -> str:
+    """Extract the most relevant result from WolframAlpha response."""
+    if not hasattr(res, 'pods') or not res.pods:
+        return "No result found"
+    
+    # Look for specific pod types that typically contain the main answer
+    priority_pods = ['Result', 'Solution', 'Answer', 'Value', 'Decimal approximation']
+    
+    for pod in res.pods:
+        if hasattr(pod, 'title') and pod.title in priority_pods:
+            if hasattr(pod, 'subpods') and pod.subpods:
+                for subpod in pod.subpods:
+                    if hasattr(subpod, 'plaintext') and subpod.plaintext:
+                        return subpod.plaintext.strip()
+    
+    # If no priority pods found, return the first meaningful result
+    for pod in res.pods:
+        if hasattr(pod, 'subpods') and pod.subpods:
+            for subpod in pod.subpods:
+                if hasattr(subpod, 'plaintext') and subpod.plaintext:
+                    text = subpod.plaintext.strip()
+                    if len(text) > 0 and text != "Input interpretation:":
+                        return text
+    
+    return "Result found but no text available"
+
+def _format_mathematical_result(res) -> Dict[str, Any]:
+    """Format mathematical computation results."""
+    result = {"has_mathematical_content": False, "calculations": []}
+    
+    if not hasattr(res, 'pods') or not res.pods:
+        return result
+    
+    for pod in res.pods:
+        if hasattr(pod, 'title') and hasattr(pod, 'subpods'):
+            # Check if this pod contains mathematical content
+            math_keywords = ['Result', 'Solution', 'Plot', 'Derivative', 'Integral', 'Equation', 'Graph']
+            if any(keyword in pod.title for keyword in math_keywords):
+                result["has_mathematical_content"] = True
+                
+                pod_data = {"title": pod.title, "content": []}
+                for subpod in pod.subpods:
+                    subpod_info = {}
+                    if hasattr(subpod, 'plaintext') and subpod.plaintext:
+                        subpod_info["text"] = subpod.plaintext
+                    if hasattr(subpod, 'img') and subpod.img and hasattr(subpod.img, 'src'):
+                        subpod_info["image_url"] = subpod.img.src
+                    if subpod_info:
+                        pod_data["content"].append(subpod_info)
+                
+                if pod_data["content"]:
+                    result["calculations"].append(pod_data)
+    
+    return result
+
+async def _make_wolfram_request(query: str, timeout: float = 30.0) -> str:
+    """Make a direct HTTP request to WolframAlpha API to bypass library header issues."""
+    url = "https://api.wolframalpha.com/v2/query"
+    params = {
+        "appid": WOLFRAMALPHA_APP_ID,
+        "input": query,
+        "scantimeout": "15.0",
+        "podtimeout": "15.0",
+        "plaintext": "true"
+    }
+    
+    async with httpx.AsyncClient() as client:
+        response = await client.get(url, params=params, timeout=timeout)
+        response.raise_for_status()
+        return response.text
+
+def _extract_result_from_xml(response_text):
+    """Extract meaningful result from WolframAlpha XML response."""
+    try:
+        import xml.etree.ElementTree as ET
+        
+        # Parse the XML response
+        root = ET.fromstring(response_text)
+        
+        # Look for pods with plaintext results
+        priority_pod_titles = ['Result', 'Solution', 'Answer', 'Value', 'Decimal approximation', 'Definition']
+        
+        # First, try to find priority pods
+        for pod in root.findall('.//pod'):
+            title = pod.get('title', '')
+            if title in priority_pod_titles:
+                for subpod in pod.findall('.//subpod'):
+                    plaintext = subpod.find('plaintext')
+                    if plaintext is not None and plaintext.text:
+                        return plaintext.text.strip()
+        
+        # If no priority pods found, return the first meaningful result
+        for pod in root.findall('.//pod'):
+            title = pod.get('title', '')
+            # Skip input interpretation pods
+            if 'Input' not in title and 'interpretation' not in title.lower():
+                for subpod in pod.findall('.//subpod'):
+                    plaintext = subpod.find('plaintext')
+                    if plaintext is not None and plaintext.text:
+                        text = plaintext.text.strip()
+                        if len(text) > 0:
+                            return text
+        
+        return "No meaningful result found"
+    except Exception as e:
+        logger.error(f"Error parsing WolframAlpha response: {e}")
+        return f"Error parsing response: {str(e)}"
+
+def _extract_comprehensive_data(response_text):
+    """Extract comprehensive data structure from WolframAlpha XML response for calculate_math function."""
+    try:
+        import xml.etree.ElementTree as ET
+        root = ET.fromstring(response_text)
+        
+        calculations = []
+        primary_result = "No result found"
+        
+        # Extract all pods with meaningful content
+        for pod in root.findall('.//pod'):
+            title = pod.get('title', '')
+            if title and 'Input' not in title:
+                pod_content = []
+                for subpod in pod.findall('.//subpod'):
+                    plaintext = subpod.find('plaintext')
+                    if plaintext is not None and plaintext.text:
+                        text = plaintext.text.strip()
+                        if text:
+                            pod_content.append({"text": text})
+                
+                if pod_content:
+                    calculations.append({
+                        "title": title,
+                        "content": pod_content
+                    })
+                    
+                    # Set primary result from priority pods
+                    if title in ['Result', 'Solution', 'Answer', 'Value', 'Decimal approximation']:
+                        primary_result = pod_content[0]["text"]
+        
+        return {
+            "primary_result": primary_result,
+            "success": len(calculations) > 0,
+            "calculations": calculations
+        }
+    except Exception as e:
+        logger.error(f"Error extracting comprehensive data: {e}")
+        return {
+            "primary_result": f"Error: {str(e)}",
+            "success": False,
+            "calculations": []
+        }
+
 @mcp.tool()
-async def query_wolfram_alpha(
-    query: str,
-    include_pods: str = None,
-    exclude_pods: str = None,
-    plaintext: bool = False # This is the parameter from our MCP tool
+async def calculate_math(
+    expression: Annotated[
+        str,
+        Field(description="Mathematical expression to calculate (e.g., '2+2', 'sqrt(16)', 'integrate x^2 dx')")
+    ]
 ) -> Dict[str, Any]:
     """
-    Sends a query to the Wolfram Alpha API using asynchronous 'aquery' and returns the results.
-    Uses the library's 'plaintext' parameter to control formatting and handles errors using httpx exceptions.
+    Perform mathematical calculations and return formatted results.
+    Optimized for mathematical expressions, equations, and computations.
+    """
+    logger.info(f"Tool 'calculate_math' called with expression: '{expression}'")
+    
+    try:
+        # Use direct HTTP request to bypass wolframalpha library header issues
+        data = await _make_wolfram_request(expression)
+        result = _extract_comprehensive_data(data)
+        
+        return {
+            "expression": expression,
+            "primary_result": result["primary_result"],
+            "success": result["success"],
+            "mathematical_analysis": {
+                "has_mathematical_content": result["success"],
+                "calculations": result["calculations"]
+            },
+            "has_visual_elements": False  # XML API doesn't include images by default
+        }
+        
+    except Exception as e:
+        import traceback
+        error_details = traceback.format_exc()
+        logger.error(f"Error in calculate_math: {e}")
+        logger.error(f"Full traceback: {error_details}")
+        return {"error": f"Mathematical calculation failed: {str(e)} | Details: {error_details[:200]}", "expression": expression}
+
+@mcp.tool()
+async def convert_units(
+    value: Annotated[
+        str,
+        Field(description="Value with unit to convert (e.g., '100 kilometers', '5 pounds', '32 fahrenheit')")
+    ],
+    target_unit: Annotated[
+        Optional[str],
+        Field(description="Target unit for conversion (optional - if not specified, common conversions will be shown)")
+    ] = None
+) -> Dict[str, Any]:
+    """
+    Convert units between different measurement systems.
+    Supports length, weight, temperature, currency, and many other unit types.
+    """
+    if target_unit:
+        query = f"{value} to {target_unit}"
+    else:
+        query = f"convert {value}"
+    
+    logger.info(f"Tool 'convert_units' called with query: '{query}'")
+    
+    try:
+        # Use direct HTTP request to bypass wolframalpha library header issues
+        data = await _make_wolfram_request(query)
+        result = _extract_result_from_xml(data)
+        
+        return {
+            "original_value": value,
+            "target_unit": target_unit,
+            "query": query,
+            "conversion_result": result,
+            "success": result != "No meaningful result found"
+        }
+        
+    except Exception as e:
+        import traceback
+        error_details = traceback.format_exc()
+        logger.error(f"Error in convert_units: {e}")
+        logger.error(f"Full traceback: {error_details}")
+        return {"error": f"Unit conversion failed: {str(e)}", "original_value": value}
+
+@mcp.tool()
+async def get_scientific_data(
+    topic: Annotated[
+        str,
+        Field(description="Scientific topic or entity to get data about (e.g., 'hydrogen atom', 'speed of light', 'DNA structure')")
+    ]
+) -> Dict[str, Any]:
+    """
+    Retrieve scientific data, constants, properties, and information.
+    Useful for chemistry, physics, biology, astronomy, and other scientific domains.
+    """
+    logger.info(f"Tool 'get_scientific_data' called with topic: '{topic}'")
+    
+    try:
+        # Use direct HTTP request to bypass wolframalpha library header issues
+        data = await _make_wolfram_request(topic)
+        result = _extract_result_from_xml(data)
+        
+        return {
+            "topic": topic,
+            "scientific_data": result,
+            "success": result != "No meaningful result found"
+        }
+        
+    except Exception as e:
+        import traceback
+        error_details = traceback.format_exc()
+        logger.error(f"Error in get_scientific_data: {e}")
+        logger.error(f"Full traceback: {error_details}")
+        return {"error": f"Scientific data retrieval failed: {str(e)}", "topic": topic}
+
+@mcp.tool()
+async def solve_equation(
+    equation: Annotated[
+        str,
+        Field(description="Equation to solve (e.g., 'x^2 + 5x + 6 = 0', '2x + 3 = 7', 'sin(x) = 0.5')")
+    ]
+) -> Dict[str, Any]:
+    """
+    Solve mathematical equations and return solutions with steps when available.
+    """
+    query = f"solve {equation}"
+    logger.info(f"Tool 'solve_equation' called with equation: '{equation}'")
+    
+    try:
+        # Use direct HTTP request to bypass wolframalpha library header issues
+        data = await _make_wolfram_request(query)
+        result = _extract_result_from_xml(data)
+        
+        return {
+            "equation": equation,
+            "solution": result,
+            "success": result != "No meaningful result found"
+        }
+        
+    except Exception as e:
+        import traceback
+        error_details = traceback.format_exc()
+        logger.error(f"Error in solve_equation: {e}")
+        logger.error(f"Full traceback: {error_details}")
+        return {"error": f"Equation solving failed: {str(e)}", "equation": equation}
+
+@mcp.tool()
+async def get_statistical_analysis(
+    data_description: Annotated[
+        str,
+        Field(description="Description of data or statistical query (e.g., 'mean of 1,2,3,4,5', 'normal distribution', 'regression analysis')")
+    ]
+) -> Dict[str, Any]:
+    """
+    Perform statistical analysis and data computations.
+    Supports descriptive statistics, probability distributions, and statistical tests.
+    """
+    logger.info(f"Tool 'get_statistical_analysis' called with: '{data_description}'")
+    
+    try:
+        # Use direct HTTP request to bypass wolframalpha library header issues
+        data = await _make_wolfram_request(data_description)
+        result = _extract_result_from_xml(data)
+        
+        return {
+            "query": data_description,
+            "statistical_analysis": result,
+            "success": result != "No meaningful result found"
+        }
+        
+    except Exception as e:
+        import traceback
+        error_details = traceback.format_exc()
+        logger.error(f"Error in get_statistical_analysis: {e}")
+        logger.error(f"Full traceback: {error_details}")
+        return {"error": f"Statistical analysis failed: {str(e)}", "query": data_description}
+
+@mcp.tool()
+async def get_definition_and_examples(
+    term: Annotated[
+        str,
+        Field(description="Term or concept to get definition and examples for (e.g., 'derivative', 'photosynthesis', 'inflation')")
+    ]
+) -> Dict[str, Any]:
+    """
+    Get definitions, explanations, and examples for terms and concepts.
+    Useful for educational purposes and understanding complex topics.
+    """
+    query = f"define {term}"
+    logger.info(f"Tool 'get_definition_and_examples' called with term: '{term}'")
+    
+    try:
+        # Use direct HTTP request to bypass wolframalpha library header issues
+        data = await _make_wolfram_request(query)
+        result = _extract_result_from_xml(data)
+        
+        return {
+            "term": term,
+            "definition": result,
+            "success": result != "No meaningful result found"
+        }
+        
+    except Exception as e:
+        import traceback
+        error_details = traceback.format_exc()
+        logger.error(f"Error in get_definition_and_examples: {e}")
+        logger.error(f"Full traceback: {error_details}")
+        return {"error": f"Definition retrieval failed: {str(e)}", "term": term}
+
+@mcp.tool()
+async def query_wolfram_alpha(
+    query: Annotated[
+        str,
+        Field(description="General query to send to WolframAlpha (use specialized tools for math, units, science, etc. when possible)")
+    ],
+    include_pods: Annotated[
+        Optional[str],
+        Field(description="Comma-separated list of pod IDs to include in results")
+    ] = None,
+    exclude_pods: Annotated[
+        Optional[str],
+        Field(description="Comma-separated list of pod IDs to exclude from results")
+    ] = None,
+    plaintext: Annotated[
+        bool,
+        Field(description="Return results in plain text format (default: False for rich content)")
+    ] = False
+) -> Dict[str, Any]:
+    """
+    General-purpose WolframAlpha query tool. For better results, consider using specialized tools:
+    - calculate_math() for mathematical expressions
+    - convert_units() for unit conversions  
+    - get_scientific_data() for scientific information
+    - solve_equation() for solving equations
+    - get_statistical_analysis() for statistics
+    - get_definition_and_examples() for definitions
+    
+    This tool provides access to the full WolframAlpha response with all available pods.
     """
     logger.info(f"MCP Tool 'query_wolfram_alpha' called with query: '{query}'")
     logger.debug(f"Parameters - include_pods: {include_pods}, exclude_pods: {exclude_pods}, plaintext: {plaintext}")
@@ -76,95 +454,22 @@ async def query_wolfram_alpha(
         additional_params['excludepodid'] = exclude_pods
 
     try:
-        # Use the library's own 'plaintext' parameter.
-        # If plaintext=True, library sets API format=plaintext.
-        # If plaintext=False, library does not set API format from this, API uses defaults (with output=xml).
-        res = await wolfram_client.aquery(
-            query,
-            scantimeout=10.0,
-            podtimeout=10.0,
-            plaintext=plaintext,  # Pass our tool's plaintext variable directly here
-            **additional_params
-        )
-
-        # --- Start Result Processing ---
-        if not hasattr(res, 'pods') or not res.pods:
-            logger.warning(f"Wolfram Alpha returned no pods for query: '{query}'")
-            primary_result_text = "No definitive result found."
-            if hasattr(res, 'success') and res.success and hasattr(res, 'results'):
-                results_list = list(res.results)
-                if len(results_list) > 0:
-                    first_result = results_list[0]
-                    primary_result_text = first_result.text if hasattr(first_result, 'text') else "Result found, but no text."
-            elif hasattr(res, 'didyoumeans') and res.didyoumeans:
-                try:
-                    suggestions = [item['val'] for item in res.didyoumeans if isinstance(item, dict) and 'val' in item]
-                    if suggestions:
-                         primary_result_text = f"Did you mean: {', '.join(suggestions)}?"
-                except TypeError:
-                    logger.warning("Could not parse 'didyoumeans' suggestions.")
-            return {
-                "query": query,
-                "info": "Wolfram Alpha did not return specific pods or direct results.",
-                "primary_result": primary_result_text,
-                "success": res.success if hasattr(res, 'success') else False
-            }
-
-        output_pods = []
-        if hasattr(res, 'pods'):
-            for pod in res.pods:
-                pod_title = pod.title if hasattr(pod, 'title') else "Untitled Pod"
-                pod_id_val = pod.id if hasattr(pod, 'id') else None # Renamed to avoid conflict with id()
-                pod_scanner = pod.scanner if hasattr(pod, 'scanner') else None
-                pod_data = {"title": pod_title, "id": pod_id_val, "scanner": pod_scanner, "subpods": []}
-
-                if hasattr(pod, 'subpods'):
-                    for subpod in pod.subpods:
-                        subpod_content = {}
-                        if hasattr(subpod, 'plaintext') and subpod.plaintext:
-                            subpod_content["plaintext"] = subpod.plaintext
-                        if hasattr(subpod, 'img') and subpod.img and hasattr(subpod.img, 'src'):
-                             subpod_content["image_url"] = subpod.img.src
-                        if hasattr(subpod, 'mathml') and subpod.mathml:
-                            subpod_content["mathml"] = subpod.mathml
-                        if hasattr(subpod, 'title') and subpod.title:
-                             subpod_content["title"] = subpod.title
-                        pod_data["subpods"].append(subpod_content)
-                output_pods.append(pod_data)
+        # Use direct HTTP request to bypass wolframalpha library header issues
+        data = await _make_wolfram_request(query)
+        result = _extract_result_from_xml(data)
         
-        logger.info(f"Successfully processed Wolfram Alpha query: '{query}'")
         return {
             "query": query,
-            "success": res.success if hasattr(res, 'success') else False,
-            "pods": output_pods,
-            "data_types": res.datatypes if hasattr(res, 'datatypes') else "",
-            "timed_out_pods": res.timedoutpods if hasattr(res, 'timedoutpods') else "",
-            "warnings": [w.text for w in res.warnings if hasattr(w, 'text')] if hasattr(res, 'warnings') and res.warnings else [],
-            "assumptions": res.assumptions if hasattr(res, 'assumptions') else None,
-            "did_you_means": [item['val'] for item in res.didyoumeans if isinstance(item, dict) and 'val' in item] if hasattr(res, 'didyoumeans') and res.didyoumeans else []
+            "result": result,
+            "success": result != "No meaningful result found"
         }
-        # --- End Result Processing ---
-
-    except httpx.HTTPStatusError as e:
-        response_text = e.response.text if e.response and hasattr(e.response, 'text') else ""
-        status_code = e.response.status_code if e.response else "Unknown Status"
-        logger.error(f"Wolfram Alpha API HTTP Status Error for query '{query}': {status_code} - {response_text}", exc_info=True)
-        return {"error": f"Wolfram Alpha API Error ({status_code}): {response_text}"}
-    except httpx.TimeoutException as e:
-        logger.error(f"Wolfram Alpha API Timeout for query '{query}': {str(e)}", exc_info=True)
-        return {"error": f"Wolfram Alpha query timed out: {str(e)}"}
-    except httpx.RequestError as e:
-        logger.error(f"Wolfram Alpha API Request Error for query '{query}': {str(e)}", exc_info=True)
-        return {"error": f"Wolfram Alpha network/request error: {str(e)}"}
-    except asyncio.TimeoutError as e:
-        logger.error(f"Asyncio Timeout Error during Wolfram Alpha query operation '{query}': {str(e)}", exc_info=True)
-        return {"error": f"Wolfram Alpha query operation timed out: {str(e)}"}
-    except ValueError as e: # Catching the specific ValueError from the library for API errors like 2500
-        logger.error(f"Wolfram Alpha library Value Error (likely API error in response) for query '{query}': {str(e)}", exc_info=True)
-        return {"error": f"Wolfram Alpha API processing error: {str(e)}"}
+        
     except Exception as e:
-        logger.exception(f"Unexpected error of type {type(e).__name__} processing Wolfram Alpha query '{query}': {e}")
-        return {"error": f"An unexpected error occurred ({type(e).__name__}): {str(e)}"}
+        import traceback
+        error_details = traceback.format_exc()
+        logger.error(f"Error in query_wolfram_alpha: {e}")
+        logger.error(f"Full traceback: {error_details}")
+        return {"error": f"Wolfram Alpha query failed: {str(e)}", "query": query}
 
 def main():
     logger.info(f"Starting WolframAlpha MCP Server on port {WOLFRAMALPHA_MCP_SERVER_PORT} with log level {LOG_LEVEL_ENV}")

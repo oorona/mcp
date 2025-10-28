@@ -1,0 +1,239 @@
+---
+services:
+  giphymcp:
+    build:
+      context: . # Build context is the root project directory
+      dockerfile: dockerfiles/Dockerfile.giphymcp # Dockerfile is at the root
+    container_name: giphymcp
+    restart: unless-stopped
+    ports:
+      - "6100:6100"
+    environment:
+    #  - GIPHY_API_KEY=${GIPHY_API_KEY} # Ensure this is set in your .env file or environment
+      - LOG_LEVEL=INFO # Or DEBUG for more verbose logging
+      - GIPHY_MCP_SERVER_PORT=6100 # Port the server inside the container will listen on
+
+    networks:
+      - intranet
+  ytmcp:
+    build:
+      context: .
+      dockerfile: dockerfiles/Dockerfile.ytmcp # Assumes this is at the root
+    container_name: ytmcp
+    ports:
+      - "6500:6500"
+    restart: unless-stopped
+    networks:
+      - intranet
+    environment:
+    #   - YOUTUBE_API_KEY=${YOUTUBE_API_KEY}
+      - LOG_LEVEL=INFO
+      - YOUTUBE_MCP_SERVER_PORT=6500 # Port the server inside the container will listen on
+
+  usersmcp:
+    build:
+       context: .
+       dockerfile: dockerfiles/Dockerfile.usersmcp # Assumes this is at the root
+    container_name: usersmcp
+    restart: unless-stopped
+    ports:
+      - "6600:6600"
+    environment:
+      - USER_API_BASE_URL=http://usercontext_api:9000/api/v1
+      - LOG_LEVEL=DEBUG
+    networks:
+      - intranet
+
+  wamcp:
+    build:
+      context: . # Assuming Dockerfile.wolframalpha is in the root or accessible path
+      dockerfile: dockerfiles/Dockerfile.wamcp # Path to the new Dockerfile
+    container_name: wamcp
+    ports:
+      - "6700:6700" # Map host port 6700 to container port 6700 (must match EXPOSE in Dockerfile and port in script)
+    restart: unless-stopped
+    environment:
+      #- WOLFRAMALPHA_APP_ID=${WOLFRAMALPHA_APP_ID} # Pass the App ID from your .env file or host environment
+      - LOG_LEVEL=INFO # Or your desired log level
+      - WOLFRAMALPHA_MCP_SERVER_PORT=6700 # Already set in the script, but can be overridden here if needed
+    networks:
+      - intranet
+
+  pistonmcp:
+    build:
+      context: .
+      dockerfile: dockerfiles/Dockerfile.pmcp # Reference the new Dockerfile
+    container_name: pistonmcp
+    ports:
+      - "6800:6800" # Host port:Container port (matches PISTON_MCP_PORT)
+    restart: unless-stopped
+    environment:
+      - PISTON_MCP_PORT=6800 # Port the server inside the container will listen on
+      - PISTON_API_BASE_URL=https://emkc.org/api/v2/piston # Default Piston API
+      - LOG_LEVEL=INFO # Or DEBUG for more verbose logging
+    networks:
+      - intranet
+  
+  timemcpo:
+     build:
+       context: .
+       dockerfile: dockerfiles/Dockerfile.timemcpo # Assumes this is at the root
+     container_name: timemcpo
+     ports:
+       - "7000:7000"
+     restart: unless-stopped
+     networks:
+       - intranet
+  giphymcpo:
+    build:
+      context: . # Build context is the root project directory
+      dockerfile: dockerfiles/Dockerfile.giphymcpo # Dockerfile is at the root
+    container_name: giphymcpo
+    ports:
+      - "7100:7100"
+    restart: unless-stopped
+    networks:
+      - intranet
+    depends_on:
+      - giphymcp
+  ytmcpo:
+    build:
+      context: .
+      dockerfile: dockerfiles/Dockerfile.ytmcpo # Assumes this is at the root
+    container_name: ytmcpo
+    depends_on:
+      - ytmcp
+    ports:
+      - "7500:7500"
+    
+    restart: unless-stopped
+    networks:
+      - intranet
+    # environment:
+    #   - MCP_TARGET_URL=http://ytmcp:6000
+    #   - MCP_PORT=7500
+  usersmcpo:
+    build:
+      context: .
+      dockerfile: dockerfiles/Dockerfile.usersmcpo # Assumes this is at the root
+    container_name: usersmcpo
+    ports:
+      - "7600:7600"
+    restart: unless-stopped
+    depends_on:
+      - usersmcp
+    networks:
+      - intranet
+    # environment:
+    #   - MCP_TARGET_URL=http://usersmcp:6600
+    #   - MCP_PORT=7600
+
+  wamcpo:
+    build:
+      context: . # Build context is the root project directory
+      dockerfile: dockerfiles/Dockerfile.wamcpo # Dockerfile is at the root
+    container_name: wamcpo
+    ports:
+      - "7700:7700"
+    restart: unless-stopped
+    networks:
+      - intranet
+    depends_on:
+      - wamcp
+
+  pistonmcpo:
+    build:
+      context: . # Build context is the root project directory
+      dockerfile: dockerfiles/Dockerfile.pmcpo # Dockerfile is at the root
+    container_name: pistonmcpo
+    ports:
+      - "7800:7800"
+    restart: unless-stopped
+    networks:
+      - intranet
+    depends_on:
+      - pistonmcp
+
+  cvemcp:
+    build:
+      context: .
+      dockerfile: dockerfiles/Dockerfile.cvemcp # Reference the new CVE Dockerfile
+    container_name: cvemcp
+    ports:
+      - "6900:6900" # Host port:Container port
+    restart: unless-stopped
+    environment:
+      - CVE_MCP_PORT=6900 # Port the server inside the container will listen on
+      # - NVD_API_KEY=${NVD_API_KEY} # Optional: NVD API key for higher rate limits
+      - LOG_LEVEL=INFO # Or DEBUG for more verbose logging
+    networks:
+      - intranet
+
+  cvemcpo:
+    build:
+      context: . # Build context is the root project directory
+      dockerfile: dockerfiles/Dockerfile.cvemcpo # Dockerfile is at the root
+    container_name: cvemcpo
+    ports:
+      - "7900:7900"
+    restart: unless-stopped
+    networks:
+      - intranet
+    depends_on:
+      - cvemcp
+
+  tenormcp:
+    build:
+      context: .
+      dockerfile: dockerfiles/Dockerfile.tenormcp # Reference the new Tenor Dockerfile
+    container_name: tenormcp
+    ports:
+      - "7200:7200" # Host port:Container port (avoiding conflicts)
+    restart: unless-stopped
+    environment:
+      - TENOR_MCP_SERVER_PORT=7200 # Port the server inside the container will listen on
+      # - TENOR_API_KEY=${TENOR_API_KEY} # Ensure this is set in your .env file or environment
+      - TENOR_CONTENT_FILTER=medium # Content safety filter: off, low, medium, high
+      - TENOR_LOCALE=en_US # Default locale
+      - LOG_LEVEL=INFO # Or DEBUG for more verbose logging
+    networks:
+      - intranet
+
+  tenormcpo:
+    build:
+      context: . # Build context is the root project directory
+      dockerfile: dockerfiles/Dockerfile.tenormcpo # Dockerfile is at the root
+    container_name: tenormcpo
+    ports:
+      - "8200:8200"
+    restart: unless-stopped
+    networks:
+      - intranet
+    depends_on:
+      - tenormcp
+
+  mcpclient:
+    build:
+      context: .
+      dockerfile: dockerfiles/Dockerfile.client
+    container_name: mcpclient
+    restart: "no" # Don't restart automatically - this is a utility container
+    networks:
+      - intranet
+    depends_on:
+      - giphymcp
+      - ytmcp
+      - usersmcp
+      - wamcp
+      - pistonmcp
+      - cvemcp
+      - tenormcp
+    # Default command shows help - override as needed
+    # Examples:
+    # docker-compose run mcpclient python client.py
+    # docker-compose run mcpclient python client.py --list-tools
+    # docker-compose run mcpclient python client.py --call-tool giphy get_top_trending_giphy_image
+      
+networks:
+  intranet:
+    external: true

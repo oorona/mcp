@@ -1,8 +1,8 @@
+# mcp/requirements.txt
 fastmcp
+pydantic
 fastapi
 uvicorn[standard]
+aiohttp
 python-dotenv
-wolframalpha>=5.0.0 
-httpx
-pydantic
 typing-extensions
