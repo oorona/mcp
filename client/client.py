@@ -254,10 +254,18 @@ class MCPClient:
         demos = [
             # Search videos
             ("search_youtube_videos", {"query": "Python tutorial", "max_results": 3}),
-            # Check transcript availability  
-            ("check_transcript_availability", {"video_id": "dQw4w9WgXcQ"}),
+            # Get channel information
+            ("get_channel_info", {"channel_id": "UCCezIgC97PvUuR4_gbFUs5g"}),
+            # Get video comments
+            ("get_video_comments", {"video_id": "dQw4w9WgXcQ", "max_results": 5}),
             # Get trending videos
             ("get_trending_videos", {"region_code": "US", "max_results": 3}),
+            # Check transcript availability  
+            ("check_transcript_availability", {"video_id": "dQw4w9WgXcQ"}),
+            # Get video transcript
+            ("get_youtube_video_transcript", {"url": "https://www.youtube.com/watch?v=dQw4w9WgXcQ"}),
+            # Get playlist videos (using a popular coding playlist)
+            ("get_playlist_videos", {"playlist_id": "PLu0W_9lII9agICnT8t4iYVSZ3eykIAOME", "max_results": 3}),
             # Extract video ID from URL
             ("extract_video_id_from_url", {"url": "https://www.youtube.com/watch?v=dQw4w9WgXcQ"}),
         ]
@@ -281,6 +289,8 @@ class MCPClient:
             ("get_piston_runtimes", {}),
             # Get Python versions
             ("get_available_language_versions", {"language": "python"}),
+            # Get specific language version info
+            ("get_piston_language_version", {"language": "python"}),
             # Execute Python code (auto-version) - demonstrates core functionality
             ("execute_code", {"language": "python", "code": "print('Hello from auto-selected Python!')\nimport sys\nprint(f'Python version: {sys.version}')"}),
             # Get JavaScript versions
@@ -304,12 +314,20 @@ class MCPClient:
         demos = [
             # Get recent CVEs
             ("get_recent_cves", {"limit": 3}),
+            # Get specific CVE details
+            ("get_cve_details", {"cve_id": "CVE-2021-44228"}),
             # Search by severity
             ("search_cves_by_severity", {"severity": "HIGH", "limit": 2}),
-            # Get CVE statistics
-            ("get_cve_statistics", {}),
             # Search by keyword
             ("search_cves_by_keyword", {"keyword": "python", "limit": 2}),
+            # Get CVE statistics
+            ("get_cve_statistics", {}),
+            # Get product vulnerability summary
+            ("get_product_vulnerability_summary", {"product_name": "apache", "days_back": 180}),
+            # Get CVE trends
+            ("get_cve_trends", {"period": "monthly", "months_back": 6}),
+            # Get remediation info
+            ("get_remediation_info", {"cve_id": "CVE-2021-44228"}),
         ]
         
         for tool_name, args in demos:
@@ -335,8 +353,14 @@ class MCPClient:
             ("get_tenor_categories", {}),
             # Get autocomplete suggestions
             ("get_tenor_autocomplete", {"query": "happy"}),
+            # Get search suggestions
+            ("get_tenor_search_suggestions", {"query": "birthday"}),
+            # Get trending terms
+            ("get_tenor_trending_terms", {}),
             # Get random GIFs
             ("get_random_tenor_gifs", {"query": "celebration", "limit": 2}),
+            # Register a share (analytics)
+            ("register_tenor_share", {"gif_id": "example_gif_id"}),
         ]
         
         for tool_name, args in demos:
@@ -372,6 +396,9 @@ class MCPClient:
             
             # Definitions and examples
             ("get_definition_and_examples", {"term": "calculus"}),
+            
+            # General query
+            ("query_wolfram_alpha", {"query": "population of Tokyo"}),
         ]
         
         for tool_name, args in demos:
