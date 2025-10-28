@@ -3,3 +3,4 @@ servers/**/.env
 client/.venv
 .github
 .env
+.venv

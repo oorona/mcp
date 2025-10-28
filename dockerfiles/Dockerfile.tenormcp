@@ -14,7 +14,7 @@ RUN useradd -m -u 1000 mcpuser && chown -R mcpuser:mcpuser /app
 USER mcpuser
 
 # Expose the port
-EXPOSE 7200
+EXPOSE 6700
 
 # Run the server
-CMD ["python", "server.py"]
+CMD ["python", "server.py", "--host", "0.0.0.0", "--port", "6700"]

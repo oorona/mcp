@@ -17,13 +17,13 @@ COPY servers/giphy/server.py .
 COPY servers/giphy/.env .
 
 
-# Make GIPHY_MCP_SERVER_PORT (default 6100) available
-EXPOSE 6100
+# Make GIPHY_MCP_SERVER_PORT available
+EXPOSE 6700
 
 # Define environment variables
 ENV PYTHONUNBUFFERED 1
-ENV GIPHY_MCP_SERVER_PORT 6100
+ENV GIPHY_MCP_SERVER_PORT=6700
 # GIPHY_API_KEY should be set via docker-compose
 
 # Run server.py when the container launches
-CMD ["python", "server.py","--host", "0.0.0.0", "--port", "6100"]
+CMD ["python", "server.py","--host", "0.0.0.0", "--port", "6700"]

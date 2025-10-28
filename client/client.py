@@ -38,12 +38,12 @@ from typing import Dict, List, Any, Optional
 
 # MCP Server Configuration
 SERVERS = {
-    "giphy": {"port": 6100, "description": "Enhanced: GIF/sticker search, trending, random, translate, categories, autocomplete"},
-    "youtube": {"port": 6500, "description": "Enhanced: Video search, transcript checking, trending, comments, channel info"},
+    "giphy": {"port": 6700, "description": "Enhanced: GIF/sticker search, trending, random, translate, categories, autocomplete"},
+    "youtube": {"port": 6700, "description": "Enhanced: Video search, transcript checking, trending, comments, channel info"},
     "wolframalpha": {"port": 6700, "description": "Enhanced: Mathematical calculations, unit conversions, scientific data, equation solving, statistical analysis, definitions"},
-    "piston": {"port": 6800, "description": "Enhanced: Auto-version selection, multiple language support"},
-    "cve": {"port": 6900, "description": "Enhanced: Comprehensive vulnerability analysis and statistics"},
-    "tenor": {"port": 7200, "description": "Enhanced: Advanced GIF search, categories, trending, autocomplete"}
+    "piston": {"port": 6700, "description": "Enhanced: Auto-version selection, multiple language support"},
+    "cve": {"port": 6700, "description": "Enhanced: Comprehensive vulnerability analysis and statistics"},
+    "tenor": {"port": 6700, "description": "Enhanced: Advanced GIF search, categories, trending, autocomplete"}
 }
 
 class MCPClient:

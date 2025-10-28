@@ -6,12 +6,10 @@ services:
       dockerfile: dockerfiles/Dockerfile.giphymcp # Dockerfile is at the root
     container_name: giphymcp
     restart: unless-stopped
-    ports:
-      - "6100:6100"
     environment:
     #  - GIPHY_API_KEY=${GIPHY_API_KEY} # Ensure this is set in your .env file or environment
       - LOG_LEVEL=INFO # Or DEBUG for more verbose logging
-      - GIPHY_MCP_SERVER_PORT=6100 # Port the server inside the container will listen on
+      - GIPHY_MCP_SERVER_PORT=6700
 
     networks:
       - intranet
@@ -20,15 +18,13 @@ services:
       context: .
       dockerfile: dockerfiles/Dockerfile.ytmcp # Assumes this is at the root
     container_name: ytmcp
-    ports:
-      - "6500:6500"
     restart: unless-stopped
     networks:
       - intranet
     environment:
     #   - YOUTUBE_API_KEY=${YOUTUBE_API_KEY}
       - LOG_LEVEL=INFO
-      - YOUTUBE_MCP_SERVER_PORT=6500 # Port the server inside the container will listen on
+      - YOUTUBE_MCP_SERVER_PORT=6700
 
   usersmcp:
     build:
@@ -49,13 +45,11 @@ services:
       context: . # Assuming Dockerfile.wolframalpha is in the root or accessible path
       dockerfile: dockerfiles/Dockerfile.wamcp # Path to the new Dockerfile
     container_name: wamcp
-    ports:
-      - "6700:6700" # Map host port 6700 to container port 6700 (must match EXPOSE in Dockerfile and port in script)
     restart: unless-stopped
     environment:
       #- WOLFRAMALPHA_APP_ID=${WOLFRAMALPHA_APP_ID} # Pass the App ID from your .env file or host environment
       - LOG_LEVEL=INFO # Or your desired log level
-      - WOLFRAMALPHA_MCP_SERVER_PORT=6700 # Already set in the script, but can be overridden here if needed
+      - WOLFRAMALPHA_MCP_SERVER_PORT=6700
     networks:
       - intranet
 
@@ -64,30 +58,26 @@ services:
       context: .
       dockerfile: dockerfiles/Dockerfile.pmcp # Reference the new Dockerfile
     container_name: pistonmcp
-    ports:
-      - "6800:6800" # Host port:Container port (matches PISTON_MCP_PORT)
     restart: unless-stopped
     environment:
-      - PISTON_MCP_PORT=6800 # Port the server inside the container will listen on
+      - PISTON_MCP_PORT=6700
       - PISTON_API_BASE_URL=https://emkc.org/api/v2/piston # Default Piston API
       - LOG_LEVEL=INFO # Or DEBUG for more verbose logging
     networks:
       - intranet
   
-  timemcpo:
-     build:
-       context: .
-       dockerfile: dockerfiles/Dockerfile.timemcpo # Assumes this is at the root
-     container_name: timemcpo
-     ports:
-       - "7000:7000"
-     restart: unless-stopped
-     networks:
-       - intranet
-  giphymcpo:
+  cvemcp:
     build:
-      context: . # Build context is the root project directory
-      dockerfile: dockerfiles/Dockerfile.giphymcpo # Dockerfile is at the root
+      context: .
+      dockerfile: dockerfiles/Dockerfile.cvemcp
+    container_name: cvemcp
+    restart: unless-stopped
+    environment:
+      - CVE_MCP_PORT=6700
+      # - NVD_API_KEY=${NVD_API_KEY} # Optional: NVD API key for higher rate limits
+      - LOG_LEVEL=INFO
+    networks:
+      - intranet
     container_name: giphymcpo
     ports:
       - "7100:7100"

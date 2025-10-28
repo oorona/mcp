@@ -14,11 +14,11 @@ RUN pip install --no-cache-dir -r requirements.txt
 COPY servers/cve/ .
 
 # Expose the port
-EXPOSE 6900
+EXPOSE 6700
 
 # Set environment variables
 ENV PYTHONUNBUFFERED=1
-ENV CVE_MCP_PORT=6900
+ENV CVE_MCP_PORT=6700
 
 # Run the server
-CMD ["python", "server.py"]
+CMD ["python", "server.py", "--host", "0.0.0.0", "--port", "6700"]
