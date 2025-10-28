@@ -5,13 +5,13 @@ A Docker-based production client for testing and interacting with MCP servers in
 ## Overview
 
 This client provides a clean, focused interface for testing all MCP servers with enhanced functionality:
-- **Giphy** (6100) - Enhanced: GIF/sticker search, trending, random, translate, categories, autocomplete
-- **YouTube** (6500) - Enhanced: Video search, transcript checking, trending, comments, channel info
-- **UserContext** (6600) - User message history  
+- **Giphy** (6700) - Enhanced: GIF/sticker search, trending, random, translate, categories, autocomplete
+- **YouTube** (6700) - Enhanced: Video search, transcript checking, trending, comments, channel info
 - **WolframAlpha** (6700) - Enhanced: Mathematical calculations, unit conversions, scientific data, equation solving, statistical analysis, definitions
-- **Piston** (6800) - Enhanced: Auto-version selection, multiple language support
-- **CVE** (6900) - Enhanced: Comprehensive vulnerability analysis and statistics
-- **Tenor** (7200) - Enhanced: Advanced GIF search, categories, trending, autocomplete
+- **Piston** (6700) - Enhanced: Auto-version selection, multiple language support
+- **CVE** (6700) - Enhanced: Comprehensive vulnerability analysis and statistics
+- **Tenor** (6700) - Enhanced: Advanced GIF search, categories, trending, autocomplete
+- **UserContext** (6700) - Enhanced: User history, conversation context, analytics, word clouds, sentiment analysis, activity patterns (11 tools)
 
 ## Features
 
@@ -76,6 +76,7 @@ docker-compose run --rm mcpclient python client.py --demo piston
 docker-compose run --rm mcpclient python client.py --demo cve
 docker-compose run --rm mcpclient python client.py --demo tenor
 docker-compose run --rm mcpclient python client.py --demo wolframalpha
+docker-compose run --rm mcpclient python client.py --demo usercontext
 
 # Run demos for all servers
 docker-compose run --rm mcpclient python client.py --demo-all
@@ -154,19 +155,32 @@ docker-compose run --rm mcpclient python client.py --call-tool giphy get_giphy_c
 docker-compose run --rm mcpclient python client.py --call-tool giphy get_giphy_autocomplete query="hap" limit=5
 docker-compose run --rm mcpclient python client.py --call-tool giphy get_trending_search_terms
 docker-compose run --rm mcpclient python client.py --call-tool giphy get_trending_giphy_stickers limit=3
+
+# Enhanced UserContext features (11 tools)
+docker-compose run --rm mcpclient python client.py --call-tool usercontext get_user_context user_id=123456789 n=10
+docker-compose run --rm mcpclient python client.py --call-tool usercontext get_conversation_context channel_id=987654321 minutes=60
+docker-compose run --rm mcpclient python client.py --call-tool usercontext list_conversation_channels
+docker-compose run --rm mcpclient python client.py --call-tool usercontext get_user_word_cloud user_id=123456789 top_words=50
+docker-compose run --rm mcpclient python client.py --call-tool usercontext get_user_activity_pattern user_id=123456789
+docker-compose run --rm mcpclient python client.py --call-tool usercontext get_user_sentiment_analysis user_id=123456789
+docker-compose run --rm mcpclient python client.py --call-tool usercontext get_channel_activity_stats channel_id=987654321 hours=24
+docker-compose run --rm mcpclient python client.py --call-tool usercontext get_channel_sentiment_trend channel_id=987654321 hours=48
+docker-compose run --rm mcpclient python client.py --call-tool usercontext get_activity_heatmap days=7
+docker-compose run --rm mcpclient python client.py --call-tool usercontext get_user_engagement_metrics user_id=123456789
+docker-compose run --rm mcpclient python client.py --call-tool usercontext get_guild_analytics_overview guild_id=111222333444 days=7
 ```
 
 ## Docker Setup
 
 ### Container Architecture
 The client runs in a Docker container connected to the `intranet` network, allowing it to communicate with all MCP servers using their container names:
-- **giphy** → `giphymcp:6100`
-- **youtube** → `ytmcp:6500`
-- **usercontext** → `usersmcp:6600`
+- **giphy** → `giphymcp:6700`
+- **youtube** → `ytmcp:6700`
 - **wolframalpha** → `wamcp:6700`
-- **piston** → `pistonmcp:6800`
-- **cve** → `cvemcp:6900`
-- **tenor** → `tenormcp:7200`
+- **piston** → `pistonmcp:6700`
+- **cve** → `cvemcp:6700`
+- **tenor** → `tenormcp:6700`
+- **usercontext** → `usersmcp:6700`
 
 ### Quick Start
 ```bash
@@ -207,14 +221,14 @@ The client runs in Docker and connects to MCP servers via the `intranet` Docker 
 For local development (running client outside Docker), use `--host localhost`.
 
 ### Server Ports
-The client uses these default ports:
-- Giphy: 6100
-- YouTube: 6500  
-- UserContext: 6600
+All MCP servers now use standardized port 6700 for internal Docker network communication:
+- Giphy: 6700
+- YouTube: 6700
 - WolframAlpha: 6700
-- Piston: 6800
-- CVE: 6900
-- Tenor: 7200
+- Piston: 6700
+- CVE: 6700
+- Tenor: 6700
+- UserContext: 6700
 
 ## Examples
 
@@ -237,16 +251,16 @@ $ docker-compose run --rm mcpclient
 ==================================================
 📊 SUMMARY
 ==================================================
-✅ Connected: 6/7 servers
+✅ Connected: 7/7 servers
    • giphy: 10 tools - Enhanced GIF/sticker search and discovery
    • youtube: 8 tools - Enhanced video search and analysis
    • wolframalpha: 7 tools - Mathematical calculations and scientific data
    • piston: 4 tools - Code execution with auto-version selection
    • cve: 8 tools - Comprehensive vulnerability database
    • tenor: 8 tools - Advanced GIF and meme search
+   • usercontext: 11 tools - User history, analytics, and sentiment analysis
 
-❌ Failed: 1 servers
-   • usercontext: Connection refused
+❌ Failed: 0 servers
 ```
 
 ### Enhanced Demo Output
@@ -386,6 +400,19 @@ $ docker-compose run --rm mcpclient python client.py --list-tools
    • get_tenor_trending_terms - Get trending search terms
    • get_random_tenor_gifs - Get random GIFs by query
    • register_tenor_share - Register GIF sharing analytics
+
+📦 USERCONTEXT (11 tools):
+   • get_user_context - Fetch user message history
+   • get_conversation_context - Fetch recent channel conversation
+   • list_conversation_channels - List available channels with history
+   • get_user_word_cloud - User word frequency analysis
+   • get_user_activity_pattern - User activity timing patterns
+   • get_user_sentiment_analysis - User sentiment analysis
+   • get_channel_activity_stats - Channel activity statistics
+   • get_channel_sentiment_trend - Channel sentiment over time
+   • get_activity_heatmap - Server-wide activity heatmap
+   • get_user_engagement_metrics - Detailed user engagement metrics
+   • get_guild_analytics_overview - Guild-wide analytics overview
 ```
 
 ### Tool Execution Examples
@@ -476,6 +503,8 @@ docker-compose run --rm mcpclient python client.py --call-tool youtube search_yo
 docker-compose run --rm mcpclient python client.py --call-tool piston execute_code language=python code="import sys; print(sys.version)"
 docker-compose run --rm mcpclient python client.py --call-tool wolframalpha calculate_math expression="integrate x^2 dx"
 docker-compose run --rm mcpclient python client.py --call-tool tenor search_tenor_gifs query="success" limit=2
+docker-compose run --rm mcpclient python client.py --call-tool usercontext get_user_context user_id=123456789 n=5
+docker-compose run --rm mcpclient python client.py --call-tool usercontext get_user_sentiment_analysis user_id=123456789
 
 # With shell access for debugging
 docker-compose run --rm mcpclient bash

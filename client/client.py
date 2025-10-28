@@ -4,7 +4,7 @@ MCP Multi-Server Client
 
 A production client for testing and interacting with MCP servers.
 Supports all servers in the MCP ecosystem: Giphy (Enhanced), YouTube (Enhanced),
-WolframAlpha (Enhanced), Piston (Enhanced), CVE (Enhanced), and Tenor (Enhanced).
+WolframAlpha (Enhanced), Piston (Enhanced), CVE (Enhanced), Tenor (Enhanced), and UserContext (Enhanced).
 
 Features:
 - Comprehensive testing of all server capabilities
@@ -19,6 +19,7 @@ Enhanced Server Capabilities:
 - Piston: 4 tools - Auto-version selection, multiple language support
 - CVE: 8 tools - Comprehensive vulnerability analysis and statistics
 - Tenor: 8 tools - Advanced GIF search, categories, trending, autocomplete
+- UserContext: 11 tools - User history, conversation context, analytics, word clouds, sentiment analysis, activity patterns
 
 Usage:
     python client.py                    # Test all servers
@@ -43,7 +44,8 @@ SERVERS = {
     "wolframalpha": {"port": 6700, "description": "Enhanced: Mathematical calculations, unit conversions, scientific data, equation solving, statistical analysis, definitions"},
     "piston": {"port": 6700, "description": "Enhanced: Auto-version selection, multiple language support"},
     "cve": {"port": 6700, "description": "Enhanced: Comprehensive vulnerability analysis and statistics"},
-    "tenor": {"port": 6700, "description": "Enhanced: Advanced GIF search, categories, trending, autocomplete"}
+    "tenor": {"port": 6700, "description": "Enhanced: Advanced GIF search, categories, trending, autocomplete"},
+    "usercontext": {"port": 6700, "description": "Enhanced: User history, conversation context, analytics, word clouds, sentiment analysis, activity patterns"}
 }
 
 class MCPClient:
@@ -108,7 +110,8 @@ class MCPClient:
                 "wolframalpha": "wamcp",
                 "piston": "pistonmcp",
                 "cve": "cvemcp",
-                "tenor": "tenormcp"
+                "tenor": "tenormcp",
+                "usercontext": "usersmcp"
             }
             host = container_map.get(server_name, server_name)
         else:
@@ -180,7 +183,8 @@ class MCPClient:
                 "wolframalpha": "wamcp",
                 "piston": "pistonmcp",
                 "cve": "cvemcp",
-                "tenor": "tenormcp"
+                "tenor": "tenormcp",
+                "usercontext": "usersmcp"
             }
             host = container_map.get(server_name, server_name)
         else:
@@ -439,6 +443,45 @@ class MCPClient:
             except Exception as e:
                 print(f"❌ Error: {str(e)}")
 
+    async def demo_usercontext(self) -> None:
+        """Demo UserContext MCP server functionality"""
+        print("\n👥 UserContext MCP Server Demo")
+        print("=" * 40)
+        
+        demos = [
+            # Get user context (messages for a user)
+            ("get_user_context", {"user_id": 123456789, "n": 5}),
+            # Get conversation context (channel messages)
+            ("get_conversation_context", {"channel_id": 987654321, "minutes": 30}),
+            # List available channels
+            ("list_conversation_channels", {}),
+            # User word cloud analysis
+            ("get_user_word_cloud", {"user_id": 123456789, "top_words": 20}),
+            # User activity pattern
+            ("get_user_activity_pattern", {"user_id": 123456789}),
+            # User sentiment analysis
+            ("get_user_sentiment_analysis", {"user_id": 123456789}),
+            # Channel activity statistics
+            ("get_channel_activity_stats", {"channel_id": 987654321, "hours": 24}),
+            # Channel sentiment trend
+            ("get_channel_sentiment_trend", {"channel_id": 987654321, "hours": 48}),
+            # Server-wide activity heatmap
+            ("get_activity_heatmap", {"days": 7}),
+            # User engagement metrics
+            ("get_user_engagement_metrics", {"user_id": 123456789}),
+            # Guild analytics overview
+            ("get_guild_analytics_overview", {"guild_id": 111222333444, "days": 7}),
+        ]
+        
+        for tool_name, args in demos:
+            try:
+                print(f"\n🔧 Testing: {tool_name}")
+                result = await self.call_tool("usercontext", tool_name, args)
+                print("📊 Result:")
+                self.print_json(result, max_lines=10)
+            except Exception as e:
+                print(f"❌ Error: {str(e)}")
+
     async def demo_server(self, server_name: str) -> None:
         """Run demo for a specific server"""
         if server_name == "youtube":
@@ -453,9 +496,11 @@ class MCPClient:
             await self.demo_giphy()
         elif server_name == "wolframalpha":
             await self.demo_wolframalpha()
+        elif server_name == "usercontext":
+            await self.demo_usercontext()
         else:
             print(f"❌ No demo available for server: {server_name}")
-            print("📝 Available demos: youtube, piston, cve, tenor, giphy, wolframalpha")
+            print("📝 Available demos: youtube, piston, cve, tenor, giphy, wolframalpha, usercontext")
 
     async def demo_all_servers(self) -> None:
         """Run demos for all servers with enhanced functionality"""
@@ -467,7 +512,7 @@ class MCPClient:
         successful_servers = [r["server"] for r in test_results if r["status"] == "success"]
         
         # Run demos for servers with demos available
-        demo_servers = ["youtube", "piston", "cve", "tenor", "giphy", "wolframalpha"]
+        demo_servers = ["youtube", "piston", "cve", "tenor", "giphy", "wolframalpha", "usercontext"]
         available_demos = [s for s in demo_servers if s in successful_servers]
         
         if not available_demos:
