@@ -1,39 +1,5 @@
-# Use Python 3.11 slim image as base
 FROM python:3.11-slim
-
-# Set working directory
 WORKDIR /app
-
-# Install basic dependencies for MCP operator
-RUN pip install --no-cache-dir fastmcp httpx
-
-# Expose the operator port
-EXPOSE 7900
-
-# Set environment variables
-ENV PYTHONUNBUFFERED=1
-ENV MCP_TARGET_URL=http://cvemcp:6900
-ENV MCP_PORT=7900
-
-# Create a simple operator script
-RUN echo '#!/usr/bin/env python3\n\
-import asyncio\n\
-import os\n\
-from fastmcp import FastMCP\n\
-\n\
-# Simple operator that proxies to the main CVE service\n\
-mcp = FastMCP(name="cve-operator", instructions="CVE MCP Operator")\n\
-\n\
-@mcp.tool()\n\
-async def health_check() -> dict:\n\
-    return {"status": "healthy", "service": "cve-operator"}\n\
-\n\
-def main():\n\
-    port = int(os.getenv("MCP_PORT", "7900"))\n\
-    mcp.run(transport="streamable-http", host="0.0.0.0", port=port)\n\
-\n\
-if __name__ == "__main__":\n\
-    main()' > operator.py
-
-# Run the operator
-CMD ["python", "operator.py"]
+RUN pip install mcpo uv
+# CVE MCP Operator - standardized on port 7700
+CMD ["uvx", "mcpo", "--port", "7700", "--server-type=streamable_http", "--", "http://cvemcp:6700/mcp"]

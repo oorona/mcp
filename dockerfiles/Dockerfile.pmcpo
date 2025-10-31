@@ -1,6 +1,6 @@
 FROM python:3.11-slim
 WORKDIR /app
 RUN pip install mcpo uv
-# Replace with your MCP server command; example: uvx mcp-server-time
-CMD ["uvx", "mcpo", "--port", "7800", "--server-type=streamable_http", "--", "http://pistonmcp:6800/mcp"]
+# Piston MCP Operator - standardized on port 7700
+CMD ["uvx", "mcpo", "--port", "7700", "--server-type=streamable_http", "--", "http://pistonmcp:6700/mcp"]
 

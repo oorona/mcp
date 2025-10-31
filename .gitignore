@@ -4,3 +4,4 @@ client/.venv
 .github
 .env
 .venv
+client/__pycache__/

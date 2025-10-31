@@ -19,12 +19,12 @@ services:
       dockerfile: dockerfiles/Dockerfile.ytmcp
     container_name: ytmcp
     restart: unless-stopped
-    networks:
-      - intranet
     environment:
     #   - YOUTUBE_API_KEY=${YOUTUBE_API_KEY}
       - LOG_LEVEL=INFO
       - YOUTUBE_MCP_SERVER_PORT=6700
+    networks:
+      - intranet
 
   usersmcp:
     build:
@@ -32,11 +32,9 @@ services:
        dockerfile: dockerfiles/Dockerfile.usersmcp
     container_name: usersmcp
     restart: unless-stopped
-    ports:
-      - "6600:6600"
     environment:
       - USER_API_BASE_URL=http://usercontext_api:9000/api/v1
-      - LOG_LEVEL=DEBUG
+      - LOG_LEVEL=INFO
     networks:
       - intranet
 

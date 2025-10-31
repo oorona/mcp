@@ -157,16 +157,16 @@ docker-compose run --rm mcpclient python client.py --call-tool giphy get_trendin
 docker-compose run --rm mcpclient python client.py --call-tool giphy get_trending_giphy_stickers limit=3
 
 # Enhanced UserContext features (11 tools)
-docker-compose run --rm mcpclient python client.py --call-tool usercontext get_user_context user_id=123456789 n=10
+docker-compose run --rm mcpclient python client.py --call-tool usercontext get_user_context user_id=811781544784035881 n=10
 docker-compose run --rm mcpclient python client.py --call-tool usercontext get_conversation_context channel_id=987654321 minutes=60
 docker-compose run --rm mcpclient python client.py --call-tool usercontext list_conversation_channels
-docker-compose run --rm mcpclient python client.py --call-tool usercontext get_user_word_cloud user_id=123456789 top_words=50
-docker-compose run --rm mcpclient python client.py --call-tool usercontext get_user_activity_pattern user_id=123456789
-docker-compose run --rm mcpclient python client.py --call-tool usercontext get_user_sentiment_analysis user_id=123456789
+docker-compose run --rm mcpclient python client.py --call-tool usercontext get_user_word_cloud user_id=811781544784035881 top_words=50
+docker-compose run --rm mcpclient python client.py --call-tool usercontext get_user_activity_pattern user_id=811781544784035881
+docker-compose run --rm mcpclient python client.py --call-tool usercontext get_user_sentiment_analysis user_id=811781544784035881
 docker-compose run --rm mcpclient python client.py --call-tool usercontext get_channel_activity_stats channel_id=987654321 hours=24
 docker-compose run --rm mcpclient python client.py --call-tool usercontext get_channel_sentiment_trend channel_id=987654321 hours=48
 docker-compose run --rm mcpclient python client.py --call-tool usercontext get_activity_heatmap days=7
-docker-compose run --rm mcpclient python client.py --call-tool usercontext get_user_engagement_metrics user_id=123456789
+docker-compose run --rm mcpclient python client.py --call-tool usercontext get_user_engagement_metrics user_id=811781544784035881
 docker-compose run --rm mcpclient python client.py --call-tool usercontext get_guild_analytics_overview guild_id=111222333444 days=7
 ```
 
@@ -503,8 +503,8 @@ docker-compose run --rm mcpclient python client.py --call-tool youtube search_yo
 docker-compose run --rm mcpclient python client.py --call-tool piston execute_code language=python code="import sys; print(sys.version)"
 docker-compose run --rm mcpclient python client.py --call-tool wolframalpha calculate_math expression="integrate x^2 dx"
 docker-compose run --rm mcpclient python client.py --call-tool tenor search_tenor_gifs query="success" limit=2
-docker-compose run --rm mcpclient python client.py --call-tool usercontext get_user_context user_id=123456789 n=5
-docker-compose run --rm mcpclient python client.py --call-tool usercontext get_user_sentiment_analysis user_id=123456789
+docker-compose run --rm mcpclient python client.py --call-tool usercontext get_user_context user_id=811781544784035881 n=5
+docker-compose run --rm mcpclient python client.py --call-tool usercontext get_user_sentiment_analysis user_id=811781544784035881
 
 # With shell access for debugging
 docker-compose run --rm mcpclient bash

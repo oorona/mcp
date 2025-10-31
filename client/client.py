@@ -448,29 +448,34 @@ class MCPClient:
         print("\n👥 UserContext MCP Server Demo")
         print("=" * 40)
         
+        # Use real Discord user ID for testing
+        user_id = 811781544784035881
+        channel_id = 1423820968740126760  # Replace with actual channel ID if available
+        guild_id = 1423815821674676267  # Replace with actual guild ID if available
+        
         demos = [
             # Get user context (messages for a user)
-            ("get_user_context", {"user_id": 123456789, "n": 5}),
+            ("get_user_context", {"user_id": user_id, "n": 5}),
             # Get conversation context (channel messages)
-            ("get_conversation_context", {"channel_id": 987654321, "minutes": 30}),
+            ("get_conversation_context", {"channel_id": channel_id, "minutes": 30}),
             # List available channels
             ("list_conversation_channels", {}),
             # User word cloud analysis
-            ("get_user_word_cloud", {"user_id": 123456789, "top_words": 20}),
+            ("get_user_word_cloud", {"user_id": user_id, "top_words": 20}),
             # User activity pattern
-            ("get_user_activity_pattern", {"user_id": 123456789}),
+            ("get_user_activity_pattern", {"user_id": user_id}),
             # User sentiment analysis
-            ("get_user_sentiment_analysis", {"user_id": 123456789}),
+            ("get_user_sentiment_analysis", {"user_id": user_id}),
             # Channel activity statistics
-            ("get_channel_activity_stats", {"channel_id": 987654321, "hours": 24}),
+            ("get_channel_activity_stats", {"channel_id": channel_id, "hours": 24}),
             # Channel sentiment trend
-            ("get_channel_sentiment_trend", {"channel_id": 987654321, "hours": 48}),
+            ("get_channel_sentiment_trend", {"channel_id": channel_id, "hours": 48}),
             # Server-wide activity heatmap
             ("get_activity_heatmap", {"days": 7}),
             # User engagement metrics
-            ("get_user_engagement_metrics", {"user_id": 123456789}),
+            ("get_user_engagement_metrics", {"user_id": user_id}),
             # Guild analytics overview
-            ("get_guild_analytics_overview", {"guild_id": 111222333444, "days": 7}),
+            ("get_guild_analytics_overview", {"guild_id": guild_id, "days": 7}),
         ]
         
         for tool_name, args in demos:
