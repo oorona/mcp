@@ -48,7 +48,9 @@ if TENOR_CONTENT_FILTER.lower() not in VALID_TENOR_CONTENT_FILTERS:
 DEFAULT_TENOR_LOCALE = "en_US"
 TENOR_LOCALE = os.getenv("TENOR_LOCALE", DEFAULT_TENOR_LOCALE)
 
-TENOR_API_BASE = "https://g.tenor.com/v1"
+# Tenor API v2 configuration
+TENOR_API_BASE = "https://tenor.googleapis.com/v2"
+TENOR_CLIENT_KEY = os.getenv("TENOR_CLIENT_KEY", "mcp_tenor_server")
 TENOR_MCP_SERVER_PORT = int(os.getenv("TENOR_MCP_SERVER_PORT", "7200"))
 
 mcp = FastMCP(
@@ -57,10 +59,11 @@ mcp = FastMCP(
 )
 
 async def _make_tenor_request(endpoint: str, params: Dict[str, Any]) -> Any:
-    """Make a request to the Tenor API"""
+    """Make a request to the Tenor API v2"""
     params["key"] = TENOR_API_KEY
+    params["client_key"] = TENOR_CLIENT_KEY
     url = f"{TENOR_API_BASE}/{endpoint}"
-    logger.debug(f"Making Tenor API request to: {url} with params: {params}")
+    logger.debug(f"Making Tenor API v2 request to: {url} with params: {params}")
     
     async with aiohttp.ClientSession() as session:
         try:
@@ -82,26 +85,25 @@ async def _make_tenor_request(endpoint: str, params: Dict[str, Any]) -> Any:
 
 def _get_best_gif_url(gif_data: Dict[str, Any]) -> Optional[str]:
     """
-    Gets the best available GIF URL from the media object.
+    Gets the best available GIF URL from the media_formats object (Tenor API v2).
     Priority: tinygif (mobile optimized), gif (high quality), mp4 (fallback)
     """
-    media = gif_data.get("media", [])
-    if not media:
+    # v2 API uses media_formats directly (not in an array)
+    media_formats = gif_data.get("media_formats", {})
+    if not media_formats:
         return None
-    
-    media_dict = media[0] if isinstance(media, list) else media
     
     # Priority order for GIF formats
     format_preference = ["tinygif", "gif", "mp4"]
     
     for format_name in format_preference:
-        format_data = media_dict.get(format_name)
+        format_data = media_formats.get(format_name)
         if format_data and format_data.get("url"):
             logger.debug(f"Selected format '{format_name}' with URL: {format_data['url']}")
             return format_data["url"]
     
     # Fallback to any available format
-    for format_name, format_data in media_dict.items():
+    for format_name, format_data in media_formats.items():
         if isinstance(format_data, dict) and format_data.get("url"):
             logger.debug(f"Fallback to format '{format_name}' with URL: {format_data['url']}")
             return format_data["url"]
@@ -205,7 +207,8 @@ async def get_trending_tenor_gifs(
             "media_filter": "minimal"
         }
         
-        api_response = await _make_tenor_request("trending", params)
+        # v2 API uses 'featured' instead of 'trending'
+        api_response = await _make_tenor_request("featured", params)
         results = api_response.get("results", [])
         
         if not results:
@@ -438,15 +441,18 @@ async def get_random_tenor_gifs(
         return {"error": "Limit must be between 1 and 50."}
 
     try:
+        # v2 API doesn't have a dedicated 'random' endpoint
+        # Use 'search' with random parameter for randomized results
         params = {
             "q": query,
             "limit": limit,
             "locale": TENOR_LOCALE,
             "contentfilter": TENOR_CONTENT_FILTER,
-            "media_filter": "minimal"
+            "media_filter": "minimal",
+            "random": "true"  # Request random results
         }
         
-        api_response = await _make_tenor_request("random", params)
+        api_response = await _make_tenor_request("search", params)
         results = api_response.get("results", [])
         
         if not results:

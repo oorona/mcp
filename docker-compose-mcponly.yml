@@ -1,6 +1,5 @@
 ---
 services:
-  # MCP Servers (all on internal port 6700)
   giphymcp:
     build:
       context: .
@@ -8,8 +7,9 @@ services:
     container_name: giphymcp
     restart: unless-stopped
     environment:
+    #  - GIPHY_API_KEY=${GIPHY_API_KEY} # Ensure this is set in your .env file or environment
+      - LOG_LEVEL=INFO # Or DEBUG for more verbose logging
       - GIPHY_MCP_SERVER_PORT=6700
-      - LOG_LEVEL=INFO
     networks:
       - intranet
 
@@ -20,7 +20,20 @@ services:
     container_name: ytmcp
     restart: unless-stopped
     environment:
+    #   - YOUTUBE_API_KEY=${YOUTUBE_API_KEY}
+      - LOG_LEVEL=INFO
       - YOUTUBE_MCP_SERVER_PORT=6700
+    networks:
+      - intranet
+
+  usersmcp:
+    build:
+       context: .
+       dockerfile: dockerfiles/Dockerfile.usersmcp
+    container_name: usersmcp
+    restart: unless-stopped
+    environment:
+      - USER_API_BASE_URL=http://usercontext_api:9000/api/v1
       - LOG_LEVEL=INFO
     networks:
       - intranet
@@ -32,8 +45,9 @@ services:
     container_name: wamcp
     restart: unless-stopped
     environment:
-      - WOLFRAMALPHA_MCP_SERVER_PORT=6700
+      #- WOLFRAMALPHA_APP_ID=${WOLFRAMALPHA_APP_ID} # Pass the App ID from your .env file or host environment
       - LOG_LEVEL=INFO
+      - WOLFRAMALPHA_MCP_SERVER_PORT=6700
     networks:
       - intranet
 
@@ -58,6 +72,7 @@ services:
     restart: unless-stopped
     environment:
       - CVE_MCP_PORT=6700
+      # - NVD_API_KEY=${NVD_API_KEY} # Optional: NVD API key for higher rate limits
       - LOG_LEVEL=INFO
     networks:
       - intranet
@@ -70,44 +85,13 @@ services:
     restart: unless-stopped
     environment:
       - TENOR_MCP_SERVER_PORT=6700
+      # - TENOR_API_KEY=${TENOR_API_KEY} # Ensure this is set in your .env file or environment
       - TENOR_CONTENT_FILTER=medium
       - TENOR_LOCALE=en_US
       - LOG_LEVEL=INFO
     networks:
       - intranet
-
-  usersmcp:
-    build:
-      context: .
-      dockerfile: dockerfiles/Dockerfile.usersmcp
-    container_name: usersmcp
-    restart: unless-stopped
-    environment:
-      - USER_MCP_PORT=6700
-      - LOG_LEVEL=INFO
-    networks:
-      - intranet
-
-  # Single MCPO proxy for all MCP servers
-  mcpo:
-    image: ghcr.io/open-webui/mcpo:main
-    container_name: mcpo
-    restart: unless-stopped
-    volumes:
-      # Mount the config file
-      - ./mcpo-config.json:/app/config/config.json:ro
-    networks:
-      - intranet
-    command: --config /app/config/config.json --hot-reload
-    depends_on:
-      - giphymcp
-      - ytmcp
-      - wamcp
-      - pistonmcp
-      - cvemcp
-      - tenormcp
-      - usersmcp
-
+      
 networks:
   intranet:
     external: true

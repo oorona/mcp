@@ -15,11 +15,98 @@ load_dotenv()
 USER_API_BASE_URL = os.getenv("USER_API_BASE_URL", "http://localhost:8000").rstrip("/")
 USER_MCP_PORT = int(os.getenv("USER_MCP_PORT", "6600"))
 
+# Debug helper function
+def log_api_error(tool_name: str, api_url: str, error: Exception, extra_context: Dict = None):
+    """Log detailed API error information for debugging"""
+    logger.error(f"Tool '{tool_name}': API Error Details:")
+    logger.error(f"  - Base URL from env: {USER_API_BASE_URL}")
+    logger.error(f"  - Full URL attempted: {api_url}")
+    logger.error(f"  - Error type: {type(error).__name__}")
+    logger.error(f"  - Error message: {str(error)}")
+    if extra_context:
+        for key, value in extra_context.items():
+            logger.error(f"  - {key}: {value}")
+    
+    # Additional DNS/network debugging
+    if isinstance(error, httpx.RequestError):
+        logger.error(f"  - Network Error: This is likely a DNS or connection issue")
+        logger.error(f"  - Check that the service '{USER_API_BASE_URL}' is accessible from this container")
+        logger.error(f"  - Verify the service is on the same Docker network")
+        
+        # Parse hostname from URL
+        try:
+            from urllib.parse import urlparse
+            parsed = urlparse(USER_API_BASE_URL)
+            logger.error(f"  - Hostname to resolve: {parsed.hostname}")
+            logger.error(f"  - Port: {parsed.port or 'default'}")
+        except:
+            pass
+
 
 
 mcp = FastMCP(
     "User history, conversation context and analytics",
 )
+
+@mcp.tool()
+async def test_api_connection() -> Dict[str, Any]:
+    """
+    Test the connection to the User API and return diagnostic information.
+    
+    This is a diagnostic tool that helps troubleshoot connection issues.
+    
+    Returns:
+        Diagnostic information including:
+        - configured_url: The base URL from environment
+        - connection_status: Whether the connection succeeded
+        - error_details: If connection failed, detailed error information
+    """
+    logger.info("Tool 'test_api_connection': Testing API connectivity")
+    logger.info(f"  - Base URL: {USER_API_BASE_URL}")
+    
+    result = {
+        "configured_url": USER_API_BASE_URL,
+        "connection_status": "unknown",
+        "test_timestamp": None,
+        "error_details": None
+    }
+    
+    # Try a simple health check or basic endpoint
+    test_url = f"{USER_API_BASE_URL}/health"  # or any known endpoint
+    
+    try:
+        async with httpx.AsyncClient(timeout=10.0) as client:
+            logger.info(f"  - Attempting to connect to: {test_url}")
+            response = await client.get(test_url)
+            result["connection_status"] = "success"
+            result["status_code"] = response.status_code
+            result["test_timestamp"] = "connected"
+            logger.info(f"  - Connection successful! Status: {response.status_code}")
+            
+    except httpx.RequestError as e:
+        result["connection_status"] = "failed"
+        result["error_type"] = type(e).__name__
+        result["error_message"] = str(e)
+        
+        # Parse hostname for debugging
+        try:
+            from urllib.parse import urlparse
+            parsed = urlparse(USER_API_BASE_URL)
+            result["hostname"] = parsed.hostname
+            result["port"] = parsed.port or "default"
+            result["scheme"] = parsed.scheme
+        except:
+            pass
+            
+        log_api_error('test_api_connection', test_url, e)
+        
+    except Exception as e:
+        result["connection_status"] = "error"
+        result["error_type"] = type(e).__name__
+        result["error_message"] = str(e)
+        logger.error(f"  - Unexpected error: {e}", exc_info=True)
+    
+    return result
 
 
 
@@ -461,10 +548,15 @@ async def get_activity_heatmap(
     params = {"days": min(days, 30)}
 
     logger.warning(f"Tool 'get_activity_heatmap': Generating activity heatmap for last {days} days")
+    logger.warning(f"Tool 'get_activity_heatmap': DEBUG - Base URL: {USER_API_BASE_URL}")
+    logger.warning(f"Tool 'get_activity_heatmap': DEBUG - Full URL: {api_url}")
+    logger.warning(f"Tool 'get_activity_heatmap': DEBUG - Parameters: {params}")
 
     try:
         async with httpx.AsyncClient() as client:
+            logger.info(f"Tool 'get_activity_heatmap': DEBUG - Making request to {api_url}")
             response = await client.get(api_url, params=params, timeout=20.0)
+            logger.info(f"Tool 'get_activity_heatmap': DEBUG - Response status: {response.status_code}")
             response.raise_for_status()
             data = response.json()
             logger.info(f"Tool 'get_activity_heatmap': Retrieved activity heatmap data")
@@ -472,12 +564,15 @@ async def get_activity_heatmap(
 
     except httpx.HTTPStatusError as e:
         logger.error(f"Tool 'get_activity_heatmap': API request failed with status {e.response.status_code}: {e.response.text}")
+        log_api_error('get_activity_heatmap', api_url, e, {'status_code': e.response.status_code})
         raise
     except httpx.RequestError as e:
         logger.error(f"Tool 'get_activity_heatmap': Could not connect to the API: {e}")
-        raise Exception(f"Network error contacting analytics API: {e}") from e
+        log_api_error('get_activity_heatmap', api_url, e, {'params': params})
+        raise Exception(f"Network error contacting analytics API at {api_url}: {e}") from e
     except Exception as e:
         logger.error(f"Tool 'get_activity_heatmap': An unexpected error occurred: {e}", exc_info=True)
+        log_api_error('get_activity_heatmap', api_url, e)
         raise Exception(f"Unexpected error fetching activity heatmap: {e}") from e
 
 

@@ -83,6 +83,7 @@ services:
     restart: unless-stopped
     environment:
       - TENOR_MCP_SERVER_PORT=6700
+      # - TENOR_API_KEY=${TENOR_API_KEY} # Ensure this is set in your .env file or environment
       - TENOR_CONTENT_FILTER=medium
       - TENOR_LOCALE=en_US
       - LOG_LEVEL=INFO

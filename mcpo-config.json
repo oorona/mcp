@@ -1,0 +1,32 @@
+{
+  "mcpServers": {
+    "giphy": {
+      "type": "streamable-http",
+      "url": "http://giphymcp:6700/mcp"
+    },
+    "youtube": {
+      "type": "streamable-http",
+      "url": "http://ytmcp:6700/mcp"
+    },
+    "wolframalpha": {
+      "type": "streamable-http",
+      "url": "http://wamcp:6700/mcp"
+    },
+    "piston": {
+      "type": "streamable-http",
+      "url": "http://pistonmcp:6700/mcp"
+    },
+    "cve": {
+      "type": "streamable-http",
+      "url": "http://cvemcp:6700/mcp"
+    },
+    "tenor": {
+      "type": "streamable-http",
+      "url": "http://tenormcp:6700/mcp"
+    },
+    "usercontext": {
+      "type": "streamable-http",
+      "url": "http://usersmcp:6700/mcp"
+    }
+  }
+}

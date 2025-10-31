@@ -37,22 +37,21 @@ import argparse
 import sys
 from typing import Dict, List, Any, Optional
 
-# MCP Server Configuration
+# MCP Server Configuration - Direct connections to individual MCP containers
 SERVERS = {
-    "giphy": {"port": 6700, "description": "Enhanced: GIF/sticker search, trending, random, translate, categories, autocomplete"},
-    "youtube": {"port": 6700, "description": "Enhanced: Video search, transcript checking, trending, comments, channel info"},
-    "wolframalpha": {"port": 6700, "description": "Enhanced: Mathematical calculations, unit conversions, scientific data, equation solving, statistical analysis, definitions"},
-    "piston": {"port": 6700, "description": "Enhanced: Auto-version selection, multiple language support"},
-    "cve": {"port": 6700, "description": "Enhanced: Comprehensive vulnerability analysis and statistics"},
-    "tenor": {"port": 6700, "description": "Enhanced: Advanced GIF search, categories, trending, autocomplete"},
-    "usercontext": {"port": 6700, "description": "Enhanced: User history, conversation context, analytics, word clouds, sentiment analysis, activity patterns"}
+    "giphy": {"container": "giphymcp", "port": 6700, "description": "Enhanced: GIF/sticker search, trending, random, translate, categories, autocomplete"},
+    "youtube": {"container": "ytmcp", "port": 6700, "description": "Enhanced: Video search, transcript checking, trending, comments, channel info"},
+    "wolframalpha": {"container": "wamcp", "port": 6700, "description": "Enhanced: Mathematical calculations, unit conversions, scientific data, equation solving, statistical analysis, definitions"},
+    "piston": {"container": "pistonmcp", "port": 6700, "description": "Enhanced: Auto-version selection, multiple language support"},
+    "cve": {"container": "cvemcp", "port": 6700, "description": "Enhanced: Comprehensive vulnerability analysis and statistics"},
+    "tenor": {"container": "tenormcp", "port": 6700, "description": "Enhanced: Advanced GIF search, categories, trending, autocomplete"},
+    "usercontext": {"container": "usersmcp", "port": 6700, "description": "Enhanced: User history, conversation context, analytics, word clouds, sentiment analysis, activity patterns"}
 }
 
 class MCPClient:
     """Production MCP client for testing and interacting with servers"""
     
-    def __init__(self, host: str = "bot", verbose: bool = False):
-        self.host = host
+    def __init__(self, verbose: bool = False):
         self.verbose = verbose
         
     def log(self, message: str, level: str = "INFO"):
@@ -102,21 +101,8 @@ class MCPClient:
         
         config = SERVERS[server_name]
         
-        # Map server names to container names when using Docker
-        if self.host == "bot":
-            container_map = {
-                "giphy": "giphymcp",
-                "youtube": "ytmcp", 
-                "wolframalpha": "wamcp",
-                "piston": "pistonmcp",
-                "cve": "cvemcp",
-                "tenor": "tenormcp",
-                "usercontext": "usersmcp"
-            }
-            host = container_map.get(server_name, server_name)
-        else:
-            host = self.host
-            
+        # Use container name from config
+        host = config.get('container', server_name)
         url = f"http://{host}:{config['port']}/mcp"
         
         self.log(f"Testing {server_name} at {url}")
@@ -175,21 +161,8 @@ class MCPClient:
         
         config = SERVERS[server_name]
         
-        # Map server names to container names when using Docker
-        if self.host == "bot":
-            container_map = {
-                "giphy": "giphymcp",
-                "youtube": "ytmcp", 
-                "wolframalpha": "wamcp",
-                "piston": "pistonmcp",
-                "cve": "cvemcp",
-                "tenor": "tenormcp",
-                "usercontext": "usersmcp"
-            }
-            host = container_map.get(server_name, server_name)
-        else:
-            host = self.host
-            
+        # Use container name from config
+        host = config.get('container', server_name)
         url = f"http://{host}:{config['port']}/mcp"
         arguments = arguments or {}
         
@@ -341,35 +314,71 @@ class MCPClient:
                 print(f"❌ Error: {str(e)}")
 
     async def demo_tenor(self) -> None:
-        """Demo Tenor MCP server functionality"""
-        print("\n🎭 Tenor MCP Server Demo")
-        print("=" * 40)
+        """Demo Tenor MCP server functionality - All 8 tools"""
+        print("\n🎭 Tenor MCP Server Demo - Testing All 8 Tools")
+        print("=" * 50)
         
         demos = [
-            # Search GIFs
-            ("search_tenor_gifs", {"query": "funny cat", "limit": 3}),
-            # Get trending GIFs
-            ("get_trending_tenor_gifs", {"limit": 3}),
-            # Get categories
-            ("get_tenor_categories", {}),
-            # Get autocomplete suggestions
-            ("get_tenor_autocomplete", {"query": "happy"}),
-            # Get search suggestions
-            ("get_tenor_search_suggestions", {"query": "birthday"}),
-            # Get trending terms
-            ("get_tenor_trending_terms", {}),
-            # Get random GIFs
-            ("get_random_tenor_gifs", {"query": "celebration", "limit": 2}),
-            # Register a share (analytics)
-            ("register_tenor_share", {"gif_id": "example_gif_id"}),
+            # 1. Search GIFs
+            ("search_tenor_gifs", {
+                "query": "funny cat", 
+                "limit": 3,
+                "content_filter": "medium"
+            }),
+            
+            # 2. Get trending GIFs
+            ("get_trending_tenor_gifs", {
+                "limit": 5,
+                "content_filter": "medium"
+            }),
+            
+            # 3. Get categories (featured)
+            ("get_tenor_categories", {
+                "category_type": "featured"
+            }),
+            
+            # 4. Get categories (emoji)
+            ("get_tenor_categories", {
+                "category_type": "emoji"
+            }),
+            
+            # 5. Get autocomplete suggestions
+            ("get_tenor_autocomplete", {
+                "partial_query": "happ",
+                "limit": 5
+            }),
+            
+            # 6. Get search suggestions
+            ("get_tenor_search_suggestions", {
+                "query": "birthday",
+                "limit": 5
+            }),
+            
+            # 7. Get trending terms
+            ("get_tenor_trending_terms", {
+                "limit": 10
+            }),
+            
+            # 8. Get random GIFs
+            ("get_random_tenor_gifs", {
+                "query": "celebration",
+                "limit": 3
+            }),
+            
+            # 9. Register a GIF share (analytics tracking)
+            ("register_tenor_share", {
+                "gif_id": "12345678",
+                "search_query": "celebration"
+            }),
         ]
         
-        for tool_name, args in demos:
+        for i, (tool_name, args) in enumerate(demos, 1):
             try:
-                print(f"\n🔧 Testing: {tool_name}")
+                print(f"\n🔧 Test {i}/{len(demos)}: {tool_name}")
+                print(f"   Parameters: {json.dumps(args, indent=6)}")
                 result = await self.call_tool("tenor", tool_name, args)
                 print("📊 Result:")
-                self.print_json(result, max_lines=10)
+                self.print_json(result, max_lines=15)
             except Exception as e:
                 print(f"❌ Error: {str(e)}")
 
@@ -692,6 +701,8 @@ async def main():
             print("   python client.py --call-tool piston execute_code language=python code='print(\"Auto version!\")'")
             print("   python client.py --call-tool wolframalpha calculate_math expression='integrate x^2 dx'")
             print("   python client.py --call-tool tenor search_tenor_gifs query='celebration' limit=2")
+            print("   python client.py --call-tool tenor get_tenor_autocomplete partial_query='happ' limit=5")
+            print("   python client.py --call-tool usercontext get_user_history user_id='811781544784035881' limit=10")
     
     except KeyboardInterrupt:
         print("\n⏹️  Interrupted by user")

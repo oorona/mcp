@@ -6,13 +6,15 @@ services:
       dockerfile: dockerfiles/Dockerfile.client
     container_name: mcpclient
     restart: "no" # Don't restart automatically - this is a utility container
+    stdin_open: true # Enable interactive mode
+    tty: true # Allocate a pseudo-TTY for colors
     networks:
       - intranet
-    # Default command shows help - override as needed
-    # Examples:
-    # docker-compose run mcpclient python client.py
-    # docker-compose run mcpclient python client.py --list-tools
-    # docker-compose run mcpclient python client.py --call-tool giphy get_top_trending_giphy_image
+    # Default command runs interactive client
+    command: python interactive_client.py
+    # Override examples:
+    # docker compose run mcpclient python client.py --list-tools
+    # docker compose run mcpclient python interactive_client.py
       
 networks:
   intranet:

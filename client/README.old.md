@@ -1,294 +1,148 @@
-# MCP Client Tools# MCP Multi-Server Client
+# MCP Multi-Server Client
 
+A Docker-based production client for testing and interacting with MCP servers in the ecosystem.
 
+## Overview
 
-This directory contains client tools for testing and interacting with MCP servers.A Docker-based production client for testing and interacting with MCP servers in the ecosystem.
-
-
-
-## 🎯 Interactive Client (Recommended)## Overview
-
-
-
-The **interactive client** provides a user-friendly console interface for testing MCP servers.This client provides a clean, focused interface for testing all MCP servers with enhanced functionality:
-
+This client provides a clean, focused interface for testing all MCP servers with enhanced functionality:
 - **Giphy** (6700) - Enhanced: GIF/sticker search, trending, random, translate, categories, autocomplete
-
-### Features:- **YouTube** (6700) - Enhanced: Video search, transcript checking, trending, comments, channel info
-
-✅ Interactive menu to select MCP servers  - **WolframAlpha** (6700) - Enhanced: Mathematical calculations, unit conversions, scientific data, equation solving, statistical analysis, definitions
-
-✅ Browse and select tools with descriptions  - **Piston** (6700) - Enhanced: Auto-version selection, multiple language support
-
-✅ **Full output display** - no truncation!  - **CVE** (6700) - Enhanced: Comprehensive vulnerability analysis and statistics
-
-✅ Pretty JSON formatting with colors  - **Tenor** (6700) - Enhanced: Advanced GIF search, categories, trending, autocomplete
-
-✅ Easy parameter input with type validation  - **UserContext** (6700) - Enhanced: User history, conversation context, analytics, word clouds, sentiment analysis, activity patterns (11 tools)
-
-✅ Parameter descriptions and requirements shown  
+- **YouTube** (6700) - Enhanced: Video search, transcript checking, trending, comments, channel info
+- **WolframAlpha** (6700) - Enhanced: Mathematical calculations, unit conversions, scientific data, equation solving, statistical analysis, definitions
+- **Piston** (6700) - Enhanced: Auto-version selection, multiple language support
+- **CVE** (6700) - Enhanced: Comprehensive vulnerability analysis and statistics
+- **Tenor** (6700) - Enhanced: Advanced GIF search, categories, trending, autocomplete
+- **UserContext** (6700) - Enhanced: User history, conversation context, analytics, word clouds, sentiment analysis, activity patterns (11 tools)
 
 ## Features
 
-### Quick Start:
-
 ### ✅ Server Testing
-
-```bash- Test individual servers or all servers at once
-
-# From the client directory- Connectivity validation with ping
-
-docker compose run --rm mcpclient- Tool and resource enumeration
-
+- Test individual servers or all servers at once
+- Connectivity validation with ping
+- Tool and resource enumeration
 - Clear success/failure reporting
 
-# Or run directly with Python (if dependencies installed)
-
-python interactive_client.py### 🔧 Tool Execution
-
-```- Call any tool on any server with arguments
-
+### 🔧 Tool Execution
+- Call any tool on any server with arguments
 - JSON argument parsing with fallback to strings
+- Pretty-printed results with truncation
+- Comprehensive error handling
 
-### Usage Flow:- Pretty-printed results with truncation
-
-1. Select an MCP server from the menu- Comprehensive error handling
-
-2. View all available tools with descriptions
-
-3. Select a tool to test### 📋 Tool Discovery
-
-4. Enter parameters interactively (with help text)- List all available tools across all servers
-
-5. Review and confirm execution- Show tool descriptions when available
-
-6. See **complete** output with pretty formatting- Organized by server for easy browsing
-
-7. Press Enter to continue testing
+### 📋 Tool Discovery
+- List all available tools across all servers
+- Show tool descriptions when available
+- Organized by server for easy browsing
 
 ### 🚀 Enhanced Functionality Demos
-
-### Example Session:- Interactive demos for each enhanced server
-
-```- Comprehensive testing of new features
-
-============================================================- Auto-version selection demonstrations
-
-            MCP Interactive Client- Real-world usage examples
-
-============================================================
+- Interactive demos for each enhanced server
+- Comprehensive testing of new features
+- Auto-version selection demonstrations
+- Real-world usage examples
 
 ## Usage
 
-ℹ Welcome! This tool helps you test MCP servers interactively.
-
 ### Prerequisites
+1. **Create the Docker network** (if it doesn't exist):
+```bash
+docker network create intranet
+```
 
-Select an MCP server to test:1. **Create the Docker network** (if it doesn't exist):
+2. **Start MCP servers** (from the main project directory):
+```bash
+# Start MCP servers only
+docker-compose up -d
 
-  1. giphy - GIF/sticker search, trending, random```bash
-
-  2. youtube - Video search, transcripts, trendingdocker network create intranet
-
-  3. wolframalpha - Math, science, conversions```
-
-  4. piston - Code execution engine
-
-  5. cve - Vulnerability analysis2. **Start MCP servers** (from the main project directory):
-
-  6. tenor - GIF search engine```bash
-
-  7. usercontext - User analytics & history# Start MCP servers only
-
-  8. Exitdocker-compose up -d
-
-
-
-Enter choice: 1# OR start MCP servers with operators
-
+# OR start MCP servers with operators
 docker-compose -f docker-compose-mcpo.yml up -d
-
-ℹ Connecting to giphy at http://mcpo:8000/giphy...```
-
-✓ Connected to giphy
+```
 
 ### Basic Testing
-
-Available Tools on giphy```bash
-
-------------------------# Test all servers (default behavior)
-
+```bash
+# Test all servers (default behavior)
 docker-compose run --rm mcpclient
 
-1. search_giphy_images
+# Test specific server
+docker-compose run --rm mcpclient python client.py --server giphy
 
-   Search for GIF images using Giphy API# Test specific server
+# Verbose output
+docker-compose run --rm mcpclient python client.py --verbose
+```
 
-   Parameters:docker-compose run --rm mcpclient python client.py --server giphy
-
-     * query (string): Search term for GIFs
-
-       limit (integer): Number of results (default: 10)# Verbose output
-
-...docker-compose run --rm mcpclient python client.py --verbose
-
-``````
-
-
-
-## 📜 Legacy Client### Enhanced Functionality Demos
-
+### Enhanced Functionality Demos
 ```bash
-
-The original `client.py` provides command-line testing capabilities.# Run demos for enhanced server functionality
-
+# Run demos for enhanced server functionality
 docker-compose run --rm mcpclient python client.py --demo giphy
-
-### Usage:docker-compose run --rm mcpclient python client.py --demo youtube
-
+docker-compose run --rm mcpclient python client.py --demo youtube
 docker-compose run --rm mcpclient python client.py --demo piston
-
-```bashdocker-compose run --rm mcpclient python client.py --demo cve
-
-# Test all serversdocker-compose run --rm mcpclient python client.py --demo tenor
-
-docker compose run --rm mcpclient python client.pydocker-compose run --rm mcpclient python client.py --demo wolframalpha
-
+docker-compose run --rm mcpclient python client.py --demo cve
+docker-compose run --rm mcpclient python client.py --demo tenor
+docker-compose run --rm mcpclient python client.py --demo wolframalpha
 docker-compose run --rm mcpclient python client.py --demo usercontext
 
-# List all tools
-
-docker compose run --rm mcpclient python client.py --list-tools# Run demos for all servers
-
+# Run demos for all servers
 docker-compose run --rm mcpclient python client.py --demo-all
 
-# Test specific server
-
-docker compose run --rm mcpclient python client.py --server giphy# Quick test of enhanced features
-
+# Quick test of enhanced features
 docker-compose run --rm mcpclient python client.py --test-enhanced
-
-# Run demo for a server```
-
-docker compose run --rm mcpclient python client.py --demo giphy
+```
 
 ### Tool Discovery
+```bash
+# List all available tools
+docker-compose run --rm mcpclient python client.py --list-tools
 
-# Call a specific tool```bash
-
-docker compose run --rm mcpclient python client.py --call-tool giphy search_giphy_images '{"query": "cats"}'# List all available tools
-
-```docker-compose run --rm mcpclient python client.py --list-tools
-
-
-
-## ⚙️ Configuration# Example output:
-
+# Example output:
 # 📦 GIPHY (10 tools):
-
-Both clients connect to MCP servers through the unified MCPO proxy:#    • get_giphy_image_by_search - Search GIFs by query
-
+#    • get_giphy_image_by_search - Search GIFs by query
 #    • get_top_trending_giphy_image - Get trending GIF
-
-```python#    • get_random_giphy_image - Get random GIF (with optional tag)
-
-SERVERS = {#    • translate_to_giphy_image - Convert phrases to perfect GIFs
-
-    "giphy": {"url": "http://mcpo:8000/giphy"},#    • get_giphy_categories - Browse available categories
-
-    "youtube": {"url": "http://mcpo:8000/youtube"},#    • get_giphy_autocomplete - Get search suggestions
-
-    "wolframalpha": {"url": "http://mcpo:8000/wolframalpha"},#    • get_trending_search_terms - Popular search terms
-
-    "piston": {"url": "http://mcpo:8000/piston"},#    • get_giphy_image_by_id - Get specific GIF by ID
-
-    "cve": {"url": "http://mcpo:8000/cve"},#    • search_giphy_stickers - Search for stickers
-
-    "tenor": {"url": "http://mcpo:8000/tenor"},#    • get_trending_giphy_stickers - Get trending stickers
-
-    "usercontext": {"url": "http://mcpo:8000/usercontext"}# 📦 CVE (8 tools):
-
-}#    • get_recent_cves
-
-```#    • search_cves_by_severity
-
+#    • get_random_giphy_image - Get random GIF (with optional tag)
+#    • translate_to_giphy_image - Convert phrases to perfect GIFs
+#    • get_giphy_categories - Browse available categories
+#    • get_giphy_autocomplete - Get search suggestions
+#    • get_trending_search_terms - Popular search terms
+#    • get_giphy_image_by_id - Get specific GIF by ID
+#    • search_giphy_stickers - Search for stickers
+#    • get_trending_giphy_stickers - Get trending stickers
+# 📦 CVE (8 tools):
+#    • get_recent_cves
+#    • search_cves_by_severity
 #    • get_product_vulnerability_summary
-
-All servers must be running on the `intranet` Docker network.#    ...
-
+#    ...
 ```
-
-## 📦 Requirements
 
 ### Tool Execution
+```bash
+# Simple tool call (no arguments)
+docker-compose run --rm mcpclient python client.py --call-tool giphy get_top_trending_giphy_image
 
-``````bash
-
-fastmcp# Simple tool call (no arguments)
-
-asynciodocker-compose run --rm mcpclient python client.py --call-tool giphy get_top_trending_giphy_image
-
-typing_extensions
-
-```# Enhanced YouTube features
-
+# Enhanced YouTube features
 docker-compose run --rm mcpclient python client.py --call-tool youtube search_youtube_videos query="Python tutorial" max_results=3
-
-Installed automatically in the Docker container.docker-compose run --rm mcpclient python client.py --call-tool youtube check_transcript_availability video_id=dQw4w9WgXcQ
-
+docker-compose run --rm mcpclient python client.py --call-tool youtube check_transcript_availability video_id=dQw4w9WgXcQ
 docker-compose run --rm mcpclient python client.py --call-tool youtube get_trending_videos region_code=US max_results=5
 
-## 💡 Tips
-
 # Enhanced Piston features (auto-version selection)
+docker-compose run --rm mcpclient python client.py --call-tool piston execute_code language=python code="print('Auto-selected Python version!')"
+docker-compose run --rm mcpclient python client.py --call-tool piston get_available_language_versions language=python
+docker-compose run --rm mcpclient python client.py --call-tool piston get_piston_runtimes
 
-**Interactive Client:**docker-compose run --rm mcpclient python client.py --call-tool piston execute_code language=python code="print('Auto-selected Python version!')"
-
-- Use number keys to navigate menusdocker-compose run --rm mcpclient python client.py --call-tool piston get_available_language_versions language=python
-
-- Colors show required parameters (⚠ * = required)docker-compose run --rm mcpclient python client.py --call-tool piston get_piston_runtimes
-
-- Output is NEVER truncated - scroll to see everything
-
-- Press Ctrl+C to go back to main menu# Enhanced CVE features
-
-- Enter `0` to go back in menusdocker-compose run --rm mcpclient python client.py --call-tool cve get_cve_statistics
-
+# Enhanced CVE features
+docker-compose run --rm mcpclient python client.py --call-tool cve get_cve_statistics
 docker-compose run --rm mcpclient python client.py --call-tool cve search_cves_by_severity severity=HIGH limit=5
+docker-compose run --rm mcpclient python client.py --call-tool cve get_cve_trends
 
-**Legacy Client:**docker-compose run --rm mcpclient python client.py --call-tool cve get_cve_trends
-
-- Good for automation and scripting
-
-- Returns JSON output# Enhanced Tenor features
-
-- Supports all MCP operations programmaticallydocker-compose run --rm mcpclient python client.py --call-tool tenor search_tenor_gifs query="celebration" limit=3
-
+# Enhanced Tenor features
+docker-compose run --rm mcpclient python client.py --call-tool tenor search_tenor_gifs query="celebration" limit=3
 docker-compose run --rm mcpclient python client.py --call-tool tenor get_trending_tenor_gifs limit=5
+docker-compose run --rm mcpclient python client.py --call-tool tenor get_tenor_categories
 
-## 🚀 Quick Commandsdocker-compose run --rm mcpclient python client.py --call-tool tenor get_tenor_categories
-
-
-
-```bash# Enhanced WolframAlpha features
-
-# Build and run interactive clientdocker-compose run --rm mcpclient python client.py --call-tool wolframalpha calculate_math expression="integrate x^2 from 0 to 5"
-
-cd client && docker compose run --rm mcpclientdocker-compose run --rm mcpclient python client.py --call-tool wolframalpha convert_units value="100 km" target_unit="miles"
-
+# Enhanced WolframAlpha features
+docker-compose run --rm mcpclient python client.py --call-tool wolframalpha calculate_math expression="integrate x^2 from 0 to 5"
+docker-compose run --rm mcpclient python client.py --call-tool wolframalpha convert_units value="100 km" target_unit="miles"
 docker-compose run --rm mcpclient python client.py --call-tool wolframalpha solve_equation equation="x^2 + 5x + 6 = 0"
+docker-compose run --rm mcpclient python client.py --call-tool wolframalpha get_scientific_data topic="hydrogen atom"
+docker-compose run --rm mcpclient python client.py --call-tool wolframalpha get_statistical_analysis data_description="mean of 1,2,3,4,5"
 
-# Rebuild after code changesdocker-compose run --rm mcpclient python client.py --call-tool wolframalpha get_scientific_data topic="hydrogen atom"
-
-cd client && docker compose build && docker compose run --rm mcpclientdocker-compose run --rm mcpclient python client.py --call-tool wolframalpha get_statistical_analysis data_description="mean of 1,2,3,4,5"
-
-
-
-# Run legacy client demos# Complex arguments (JSON parsing)
-
-docker compose run --rm mcpclient python client.py --demo-alldocker-compose run --rm mcpclient python client.py --call-tool piston execute_code language=javascript code="console.log('Hello Node.js!');"
-
-```
+# Complex arguments (JSON parsing)
+docker-compose run --rm mcpclient python client.py --call-tool piston execute_code language=javascript code="console.log('Hello Node.js!');"
 
 # String arguments
 docker-compose run --rm mcpclient python client.py --call-tool giphy get_giphy_image_by_search query="funny cats" search_limit=3
