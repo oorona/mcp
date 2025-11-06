@@ -4,7 +4,7 @@ services:
   giphymcp:
     build:
       context: .
-      dockerfile: dockerfiles/Dockerfile.giphymcp
+      dockerfile: servers/giphy/Dockerfile
     container_name: giphymcp
     restart: unless-stopped
     environment:
@@ -12,11 +12,19 @@ services:
       - LOG_LEVEL=INFO
     networks:
       - intranet
+    labels:
+      - "traefik.enable=true"
+      - "traefik.http.routers.giphymcp.rule=Host(`giphymcp.iktdts.com`)"
+      - "traefik.http.routers.giphymcp.entrypoints=websecure"
+      - "traefik.http.routers.giphymcp.tls=true"
+      - "traefik.http.routers.giphymcp.tls.certresolver=cloudflare"
+      - "traefik.http.services.giphymcp.loadbalancer.server.port=6700"
+      - "traefik.docker.network=intranet"
 
   ytmcp:
     build:
       context: .
-      dockerfile: dockerfiles/Dockerfile.ytmcp
+      dockerfile: servers/youtube/Dockerfile
     container_name: ytmcp
     restart: unless-stopped
     environment:
@@ -24,11 +32,19 @@ services:
       - LOG_LEVEL=INFO
     networks:
       - intranet
+    labels:
+      - "traefik.enable=true"
+      - "traefik.http.routers.ytmcp.rule=Host(`ytmcp.iktdts.com`)"
+      - "traefik.http.routers.ytmcp.entrypoints=websecure"
+      - "traefik.http.routers.ytmcp.tls=true"
+      - "traefik.http.routers.ytmcp.tls.certresolver=cloudflare"
+      - "traefik.http.services.ytmcp.loadbalancer.server.port=6700"
+      - "traefik.docker.network=intranet"
 
   wamcp:
     build:
       context: .
-      dockerfile: dockerfiles/Dockerfile.wamcp
+      dockerfile: servers/wolframalpha/Dockerfile
     container_name: wamcp
     restart: unless-stopped
     environment:
@@ -36,11 +52,19 @@ services:
       - LOG_LEVEL=INFO
     networks:
       - intranet
+    labels:
+      - "traefik.enable=true"
+      - "traefik.http.routers.wamcp.rule=Host(`wamcp.iktdts.com`)"
+      - "traefik.http.routers.wamcp.entrypoints=websecure"
+      - "traefik.http.routers.wamcp.tls=true"
+      - "traefik.http.routers.wamcp.tls.certresolver=cloudflare"
+      - "traefik.http.services.wamcp.loadbalancer.server.port=6700"
+      - "traefik.docker.network=intranet"
 
   pistonmcp:
     build:
       context: .
-      dockerfile: dockerfiles/Dockerfile.pmcp
+      dockerfile: servers/piston/Dockerfile
     container_name: pistonmcp
     restart: unless-stopped
     environment:
@@ -49,11 +73,19 @@ services:
       - LOG_LEVEL=INFO
     networks:
       - intranet
+    labels:
+      - "traefik.enable=true"
+      - "traefik.http.routers.pistonmcp.rule=Host(`pistonmcp.iktdts.com`)"
+      - "traefik.http.routers.pistonmcp.entrypoints=websecure"
+      - "traefik.http.routers.pistonmcp.tls=true"
+      - "traefik.http.routers.pistonmcp.tls.certresolver=cloudflare"
+      - "traefik.http.services.pistonmcp.loadbalancer.server.port=6700"
+      - "traefik.docker.network=intranet"
 
   cvemcp:
     build:
       context: .
-      dockerfile: dockerfiles/Dockerfile.cvemcp
+      dockerfile: servers/cve/Dockerfile
     container_name: cvemcp
     restart: unless-stopped
     environment:
@@ -61,11 +93,19 @@ services:
       - LOG_LEVEL=INFO
     networks:
       - intranet
+    labels:
+      - "traefik.enable=true"
+      - "traefik.http.routers.cvemcp.rule=Host(`cvemcp.iktdts.com`)"
+      - "traefik.http.routers.cvemcp.entrypoints=websecure"
+      - "traefik.http.routers.cvemcp.tls=true"
+      - "traefik.http.routers.cvemcp.tls.certresolver=cloudflare"
+      - "traefik.http.services.cvemcp.loadbalancer.server.port=6700"
+      - "traefik.docker.network=intranet"
 
   tenormcp:
     build:
       context: .
-      dockerfile: dockerfiles/Dockerfile.tenormcp
+      dockerfile: servers/tenor/Dockerfile
     container_name: tenormcp
     restart: unless-stopped
     environment:
@@ -75,11 +115,19 @@ services:
       - LOG_LEVEL=INFO
     networks:
       - intranet
+    labels:
+      - "traefik.enable=true"
+      - "traefik.http.routers.tenormcp.rule=Host(`tenormcp.iktdts.com`)"
+      - "traefik.http.routers.tenormcp.entrypoints=websecure"
+      - "traefik.http.routers.tenormcp.tls=true"
+      - "traefik.http.routers.tenormcp.tls.certresolver=cloudflare"
+      - "traefik.http.services.tenormcp.loadbalancer.server.port=6700"
+      - "traefik.docker.network=intranet"
 
   usersmcp:
     build:
       context: .
-      dockerfile: dockerfiles/Dockerfile.usersmcp
+      dockerfile: servers/usercontext/Dockerfile
     container_name: usersmcp
     restart: unless-stopped
     environment:
@@ -87,6 +135,14 @@ services:
       - LOG_LEVEL=INFO
     networks:
       - intranet
+    labels:
+      - "traefik.enable=true"
+      - "traefik.http.routers.usersmcp.rule=Host(`usersmcp.iktdts.com`)"
+      - "traefik.http.routers.usersmcp.entrypoints=websecure"
+      - "traefik.http.routers.usersmcp.tls=true"
+      - "traefik.http.routers.usersmcp.tls.certresolver=cloudflare"
+      - "traefik.http.services.usersmcp.loadbalancer.server.port=6700"
+      - "traefik.docker.network=intranet"
 
   # Single MCPO proxy for all MCP servers
   mcpo:
@@ -98,6 +154,14 @@ services:
       - ./mcpo-config.json:/app/config/config.json:ro
     networks:
       - intranet
+    labels:
+      - "traefik.enable=true"
+      - "traefik.http.routers.mcpo.rule=Host(`mcpo.iktdts.com`)"
+      - "traefik.http.routers.mcpo.entrypoints=websecure"
+      - "traefik.http.routers.mcpo.tls=true"
+      - "traefik.http.routers.mcpo.tls.certresolver=cloudflare"
+      - "traefik.http.services.mcpo.loadbalancer.server.port=8000"
+      - "traefik.docker.network=intranet"
     command: --config /app/config/config.json --hot-reload
     depends_on:
       - giphymcp
