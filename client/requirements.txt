@@ -1,3 +1,4 @@
 fastmcp
 asyncio
 typing_extensions
+python-dotenv

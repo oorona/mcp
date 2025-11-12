@@ -16,9 +16,14 @@ Usage:
 
 import asyncio
 import json
+import os
 from typing import Dict, List, Any, Optional
 from fastmcp import Client
 import sys
+from dotenv import load_dotenv
+
+# Load environment variables from .env file
+load_dotenv()
 
 # ANSI color codes for better UI
 class Colors:
@@ -80,15 +85,36 @@ def get_default_value(param_name: str, param_type: str) -> Any:
     else:  # string
         return "test"
 
-# MCP Server Configuration - Direct connections to individual MCP servers
+# MCP Server Configuration with Environment Variable Support
 SERVERS = {
-    "giphy": {"url": "http://giphymcp:6700/mcp", "description": "GIF/sticker search, trending, random"},
-    "youtube": {"url": "http://ytmcp:6700/mcp", "description": "Video search, transcripts, trending"},
-    "wolframalpha": {"url": "http://wamcp:6700/mcp", "description": "Math, science, conversions"},
-    "piston": {"url": "http://pistonmcp:6700/mcp", "description": "Code execution engine"},
-    "cve": {"url": "http://cvemcp:6700/mcp", "description": "Vulnerability analysis"},
-    "tenor": {"url": "http://tenormcp:6700/mcp", "description": "GIF search engine"},
-    "usercontext": {"url": "http://usersmcp:6700/mcp", "description": "User analytics & history"}
+    "giphy": {
+        "url": os.getenv("MCP_GIPHY_URL", "https://giphymcp.iktdts.com/mcp"), 
+        "description": "GIF/sticker search, trending, random"
+    },
+    "youtube": {
+        "url": os.getenv("MCP_YOUTUBE_URL", "https://ytmcp.iktdts.com/mcp"), 
+        "description": "Video search, transcripts, trending"
+    },
+    "wolframalpha": {
+        "url": os.getenv("MCP_WOLFRAMALPHA_URL", "https://wamcp.iktdts.com/mcp"), 
+        "description": "Math, science, conversions"
+    },
+    "piston": {
+        "url": os.getenv("MCP_PISTON_URL", "https://pistonmcp.iktdts.com/mcp"), 
+        "description": "Code execution engine"
+    },
+    "cve": {
+        "url": os.getenv("MCP_CVE_URL", "https://cvemcp.iktdts.com/mcp"), 
+        "description": "Vulnerability analysis"
+    },
+    "tenor": {
+        "url": os.getenv("MCP_TENOR_URL", "https://tenormcp.iktdts.com/mcp"), 
+        "description": "GIF search engine"
+    },
+    "usercontext": {
+        "url": os.getenv("MCP_USERCONTEXT_URL", "https://usersmcp.iktdts.com/mcp"), 
+        "description": "User analytics & history"
+    }
 }
 
 def print_header(text: str):
@@ -136,29 +162,50 @@ def print_json(data: Any, title: str = "Response"):
     except Exception as e:
         print(f"Raw output: {data}")
 
+def get_confirmation(prompt: str, default: bool = True) -> bool:
+    """Get yes/no confirmation with Enter as default"""
+    default_text = "Y/n" if default else "y/N"
+    full_prompt = f"{Colors.BOLD}{prompt} ({default_text}, Enter for {'yes' if default else 'no'}): {Colors.ENDC}"
+    
+    while True:
+        response = input(full_prompt).strip().lower()
+        
+        # Empty response uses default
+        if response == "":
+            return default
+        
+        if response in ['y', 'yes']:
+            return True
+        elif response in ['n', 'no']:
+            return False
+        else:
+            print_error("Please enter 'y' for yes, 'n' for no, or just press Enter for default")
+
 def get_choice(prompt: str, options: List[str], allow_back: bool = True) -> Optional[str]:
     """Display menu and get user choice"""
+    back_action = "exit" if not allow_back else "go back"
+    
     while True:
         print(f"\n{Colors.BOLD}{prompt}{Colors.ENDC}")
         for i, option in enumerate(options, 1):
             print(f"  {Colors.OKCYAN}{i}.{Colors.ENDC} {option}")
         
-        if allow_back:
-            print(f"  {Colors.WARNING}0.{Colors.ENDC} Back/Cancel")
+        print(f"  {Colors.WARNING}Enter{Colors.ENDC} - {'Exit' if not allow_back else 'Go back'}")
         
         try:
-            choice = input(f"\n{Colors.BOLD}Enter choice: {Colors.ENDC}").strip()
+            choice = input(f"\n{Colors.BOLD}Enter choice (or just press Enter): {Colors.ENDC}").strip()
             
-            if allow_back and choice == "0":
+            # Handle empty input (just Enter pressed)
+            if choice == "":
                 return None
             
             choice_num = int(choice)
             if 1 <= choice_num <= len(options):
                 return options[choice_num - 1]
             else:
-                print_error(f"Please enter a number between 1 and {len(options)}")
+                print_error(f"Please enter a number between 1 and {len(options)}, or just press Enter to {back_action}")
         except ValueError:
-            print_error("Please enter a valid number")
+            print_error(f"Please enter a valid number, or just press Enter to {back_action}")
         except KeyboardInterrupt:
             print("\n")
             return None
@@ -178,21 +225,31 @@ async def call_tool_interactive(client: Client, tool) -> None:
     required = input_schema.get('required', [])
     
     if properties:
-        print_info("Enter parameters (press Enter to skip optional parameters):\n")
+        print_info("Enter parameters (press Enter to skip optional parameters or use defaults):\n")
         
         for param_name, param_info in properties.items():
             is_required = param_name in required
             param_type = param_info.get('type', 'string')
             param_desc = param_info.get('description', '')
+            default_value = get_default_value(param_name, param_type)
             
             while True:
                 req_marker = f"{Colors.WARNING}*{Colors.ENDC}" if is_required else " "
                 prompt = f"{req_marker} {param_name} ({param_type})"
                 if param_desc:
                     prompt += f"\n  {Colors.OKCYAN}{param_desc}{Colors.ENDC}"
-                prompt += f"\n  Value: "
+                
+                if default_value and not is_required:
+                    prompt += f"\n  {Colors.WARNING}Default: {default_value}{Colors.ENDC}"
+                    prompt += f"\n  Value (Enter for default): "
+                else:
+                    prompt += f"\n  Value: "
                 
                 value = input(prompt).strip()
+                
+                # Use default if available and no value entered
+                if not value and default_value and not is_required:
+                    value = str(default_value)
                 
                 # Skip if optional and empty
                 if not value and not is_required:
@@ -228,8 +285,7 @@ async def call_tool_interactive(client: Client, tool) -> None:
     else:
         print("No arguments")
     
-    confirm = input(f"\n{Colors.BOLD}Execute? (y/n): {Colors.ENDC}").strip().lower()
-    if confirm != 'y':
+    if not get_confirmation("Execute?"):
         print_warning("Execution cancelled")
         return
     
@@ -253,8 +309,7 @@ async def run_all_tools_with_defaults(client: Client, tools: List, server_name: 
     print_header(f"Running All Tools on {server_name.upper()}")
     print_warning(f"This will execute all {len(tools)} tools with default test values")
     
-    confirm = input(f"\n{Colors.BOLD}Continue? (y/n): {Colors.ENDC}").strip().lower()
-    if confirm != 'y':
+    if not get_confirmation("Continue?"):
         print_warning("Cancelled")
         return
     
@@ -306,8 +361,7 @@ async def run_all_tools_with_defaults(client: Client, tools: List, server_name: 
     print(f"{Colors.FAIL}✗ Failed: {error_count}{Colors.ENDC}")
     
     # Show details
-    show_details = input(f"\n{Colors.BOLD}Show detailed results? (y/n): {Colors.ENDC}").strip().lower()
-    if show_details == 'y':
+    if get_confirmation("Show detailed results?", default=False):
         for result in results:
             if result['status'] == 'success':
                 print_json(result['result'], f"✓ {result['tool']}")
@@ -403,15 +457,18 @@ async def main():
     """Main interactive loop"""
     print_header("MCP Interactive Client")
     print_info("Welcome! This tool helps you test MCP servers interactively.")
+    print_info("🔹 Enter a number to select an option")
+    print_info("🔹 Press Enter to go back or exit")
+    print_info("🔹 Use Ctrl+C to interrupt operations")
+    print_info("🔹 Default values are shown in prompts (just press Enter to use them)")
     
     while True:
         # Server selection
         server_options = [f"{name} - {info['description']}" for name, info in SERVERS.items()]
-        server_options.append(f"{Colors.FAIL}Exit{Colors.ENDC}")
         
         choice = get_choice("Select an MCP server to test:", server_options, allow_back=False)
         
-        if choice is None or "Exit" in choice:
+        if choice is None:
             print_header("Goodbye!")
             break
         
@@ -422,8 +479,7 @@ async def main():
             await test_server(server_name)
         except KeyboardInterrupt:
             print("\n")
-            confirm = input(f"{Colors.WARNING}Return to main menu? (y/n): {Colors.ENDC}").strip().lower()
-            if confirm != 'y':
+            if not get_confirmation("Return to main menu?"):
                 break
         except Exception as e:
             print_error(f"Unexpected error: {str(e)}")
