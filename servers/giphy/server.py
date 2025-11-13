@@ -674,6 +674,8 @@ async def get_top_trending_giphy_image() -> Dict[str, Any]:
 
 def main():
     logger.info(f"Starting Giphy MCP Server on port {GIPHY_MCP_SERVER_PORT} with log level {LOG_LEVEL_ENV}")
+    logger.info("Registered tools: get_random_giphy_image, translate_to_giphy_image, get_giphy_categories, get_giphy_autocomplete, get_trending_search_terms, get_giphy_image_by_id, search_giphy_stickers, get_trending_giphy_stickers, get_giphy_image_by_search, get_top_trending_giphy_image")
+
     mcp.run(transport="streamable-http",
         host="0.0.0.0",
         port=GIPHY_MCP_SERVER_PORT,

@@ -466,7 +466,7 @@ async def search_cves_by_keyword(
         logger.exception(f"Unexpected error in search_cves_by_keyword: {e}")
         return {"error": f"An unexpected error occurred: {str(e)}"}
 
-@mcp.tool()
+#@mcp.tool()
 async def get_cve_statistics(
     days_back: Annotated[
         Optional[int],
@@ -706,7 +706,7 @@ async def get_product_vulnerability_summary(
         logger.exception(f"Unexpected error in get_product_vulnerability_summary: {e}")
         return {"error": f"An unexpected error occurred: {str(e)}"}
 
-@mcp.tool()
+#@mcp.tool()
 async def get_cve_trends(
     period: Annotated[
         str,
@@ -1077,7 +1077,8 @@ def main():
         logger.info("NVD API key configured (enhanced rate limits)")
     else:
         logger.info("No NVD API key configured (using public rate limits)")
-    
+    logger.info("Registered tools: get_recent_cves, get_cve_details, search_cves_by_severity, search_cves_by_keyword, get_product_vulnerability_summary, get_remediation_info")
+
     mcp.run(transport="streamable-http",
         host="0.0.0.0",
         port=CVE_MCP_PORT,

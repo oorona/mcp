@@ -252,7 +252,7 @@ async def search_youtube_videos(
         logger.exception(f"Error searching YouTube videos: {e}")
         return {"error": f"Failed to search videos: {str(e)}"}
 
-@mcp.tool()
+#@mcp.tool()
 async def get_channel_info(
     channel_id: Annotated[
         str,
@@ -301,7 +301,7 @@ async def get_channel_info(
         logger.exception(f"Error getting channel info: {e}")
         return {"error": f"Failed to get channel info: {str(e)}"}
 
-@mcp.tool()
+#@mcp.tool()
 async def get_video_comments(
     video_id: Annotated[
         str,
@@ -438,7 +438,7 @@ async def get_trending_videos(
         logger.exception(f"Error getting trending videos: {e}")
         return {"error": f"Failed to get trending videos: {str(e)}"}
 
-@mcp.tool()
+#@mcp.tool()
 async def check_transcript_availability(
     video_id: Annotated[
         str,
@@ -702,7 +702,7 @@ async def get_youtube_video_transcript(
             "error": f"Failed to process request: {str(e)}"
         }
 
-@mcp.tool()
+#@mcp.tool()
 async def get_playlist_videos(
     playlist_id: Annotated[
         str,
@@ -759,7 +759,7 @@ async def get_playlist_videos(
         logger.exception(f"Error getting playlist videos: {e}")
         return {"error": f"Failed to get playlist videos: {str(e)}"}
 
-@mcp.tool()
+#@mcp.tool()
 async def extract_video_id_from_url(
     url: Annotated[
         str,
@@ -809,6 +809,8 @@ async def extract_video_id_from_url(
 
 def main():
     logger.info(f"Starting Youtube MCP Server on port {YOUTUBE_MCP_SERVER_PORT} with log level {LOG_LEVEL_ENV}")
+    logger.info("Registered tools: search_youtube_videos, get_trending_videos, get_youtube_video_transcript")
+
     mcp.run(transport="streamable-http",
         host="0.0.0.0",
         port=YOUTUBE_MCP_SERVER_PORT,

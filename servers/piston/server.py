@@ -278,7 +278,7 @@ async def execute_code(
         return {"error": "An unexpected error occurred during code execution", "details": str(e)}
 
 
-@mcp.tool()
+#@mcp.tool()
 async def get_available_language_versions(
     language: Annotated[str, Field(description="The programming language to get available versions for (e.g., 'python', 'javascript', 'java')")]
 ) -> Dict[str, Any]:
@@ -314,7 +314,7 @@ async def get_available_language_versions(
         "version_details": sorted_versions
     }
 
-@mcp.tool()
+#@mcp.tool()
 async def get_piston_runtimes() -> Dict[str, Any]:
     """
     Fetches the list of all available programming languages and their versions supported for code execution.
@@ -405,7 +405,7 @@ async def get_piston_runtimes() -> Dict[str, Any]:
 #         logger.error(f"Tool 'get_piston_runtimes': An unexpected error occurred while fetching runtimes: {e}", exc_info=True)
 #         return {"error": "An unexpected error occurred while fetching runtimes for code execution", "details": str(e)}
 
-@mcp.tool()
+#@mcp.tool()
 async def get_piston_language_version(language: str) -> Dict[str, Any]:
     """
 #     Fetches the list of specific versions supported for code execution by the Piston API.
@@ -474,7 +474,7 @@ async def get_piston_language_version(language: str) -> Dict[str, Any]:
         return {"Error": f"An unexpected error occurred while fetching runtime for '{language}'."}
 
 
-@mcp.resource(uri="language://{language}/version")
+#@mcp.resource(uri="language://{language}/version")
 async def get_language_version_resource(language: str) -> Dict[str, Any]:
     """Retrieves information about a version availables for specific language."""
     requested_language_lower = language.lower()
@@ -543,6 +543,8 @@ async def get_language_version_resource(language: str) -> Dict[str, Any]:
 def main():
     logger.info(f"Starting Piston Code Execution MCP Server on port {PISTON_MCP_PORT} with log level {LOG_LEVEL_ENV}")
     logger.info(f"Piston API Base URL for code execution configured to: {PISTON_API_BASE_URL}")
+    logger.info("Registered tool: execute_code")
+
     mcp.run(transport="streamable-http",
         host="0.0.0.0",
         port=PISTON_MCP_PORT,

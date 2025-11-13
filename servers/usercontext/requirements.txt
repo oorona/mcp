@@ -1,14 +1,6 @@
-# MCP Server Requirements
-# Only the dependencies needed for the MCP server to function independently
-
-# Core MCP Dependencies
-fastmcp>=0.5.0
-httpx[http2] # For making HTTP requests to the API
-python-dotenv>=0.20.0
-
-# Analytics Dependencies (if needed for client-side processing)
-nltk>=3.8.0 # Natural language processing
-textblob>=0.17.0 # Sentiment analysis
-
-# System monitoring (for health checks)
-psutil>=5.8.0
+fastmcp
+httpx
+python-dotenv
+nltk
+textblob
+psutil

@@ -48,7 +48,7 @@ mcp = FastMCP(
     "User history, conversation context and analytics",
 )
 
-@mcp.tool()
+#@mcp.tool()
 async def test_api_connection() -> Dict[str, Any]:
     """
     Test the connection to the User API and return diagnostic information.
@@ -211,7 +211,7 @@ async def get_conversation_context(
         raise Exception(f"Unexpected error fetching conversation context: {e}") from e
 
 
-@mcp.tool()
+#@mcp.tool()
 async def list_conversation_channels() -> List[Dict[str, Any]]:
     """
     Lists Discord channels that have available conversation history.
@@ -576,7 +576,7 @@ async def get_activity_heatmap(
         raise Exception(f"Unexpected error fetching activity heatmap: {e}") from e
 
 
-@mcp.tool()
+#@mcp.tool()
 async def get_user_engagement_metrics(
     user_id: int
 ) -> Dict[str, Any]:
@@ -631,7 +631,7 @@ async def get_user_engagement_metrics(
         raise Exception(f"Unexpected error fetching engagement metrics: {e}") from e
 
 
-@mcp.tool()
+#@mcp.tool()
 async def get_guild_analytics_overview(
     guild_id: int,
     days: int = 7
@@ -690,9 +690,9 @@ async def get_guild_analytics_overview(
 def main():
     logger.info(f"Starting UserContext MCP server on port {USER_MCP_PORT}")
     logger.info(f"API Base URL: {USER_API_BASE_URL}")
-    logger.info("Available tools: get_user_context, get_channel_discovery, get_conversation_context, analytics tools")
+    logger.info("Registered tools: get_user_context, get_conversation_context, get_user_word_cloud, get_user_activity_pattern, get_user_sentiment_analysis, get_channel_activity_stats, get_channel_sentiment_trend, get_activity_heatmap")
     logger.info("Using streamable HTTP transport for REST API compatibility")
-    
+
     mcp.run(
         transport="streamable-http",
         host="0.0.0.0",

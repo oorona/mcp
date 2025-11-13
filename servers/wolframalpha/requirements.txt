@@ -2,7 +2,7 @@ fastmcp
 fastapi
 uvicorn[standard]
 python-dotenv
-wolframalpha>=5.0.0 
+wolframalpha
 httpx
 pydantic
 typing-extensions

@@ -247,7 +247,7 @@ async def calculate_math(
         logger.error(f"Full traceback: {error_details}")
         return {"error": f"Mathematical calculation failed: {str(e)} | Details: {error_details[:200]}", "expression": expression}
 
-@mcp.tool()
+#@mcp.tool()
 async def convert_units(
     value: Annotated[
         str,
@@ -351,7 +351,7 @@ async def solve_equation(
         logger.error(f"Full traceback: {error_details}")
         return {"error": f"Equation solving failed: {str(e)}", "equation": equation}
 
-@mcp.tool()
+#@mcp.tool()
 async def get_statistical_analysis(
     data_description: Annotated[
         str,
@@ -382,7 +382,7 @@ async def get_statistical_analysis(
         logger.error(f"Full traceback: {error_details}")
         return {"error": f"Statistical analysis failed: {str(e)}", "query": data_description}
 
-@mcp.tool()
+#@mcp.tool()
 async def get_definition_and_examples(
     term: Annotated[
         str,
@@ -414,7 +414,7 @@ async def get_definition_and_examples(
         logger.error(f"Full traceback: {error_details}")
         return {"error": f"Definition retrieval failed: {str(e)}", "term": term}
 
-@mcp.tool()
+#@mcp.tool()
 async def query_wolfram_alpha(
     query: Annotated[
         str,
@@ -473,6 +473,8 @@ async def query_wolfram_alpha(
 
 def main():
     logger.info(f"Starting WolframAlpha MCP Server on port {WOLFRAMALPHA_MCP_SERVER_PORT} with log level {LOG_LEVEL_ENV}")
+    logger.info("Registered tools: calculate_math, get_scientific_data, solve_equation")
+
     mcp.run(transport="streamable-http",
         host="0.0.0.0",
         port=WOLFRAMALPHA_MCP_SERVER_PORT,

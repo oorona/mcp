@@ -242,7 +242,7 @@ async def get_trending_tenor_gifs(
         logger.exception(f"Unexpected error in get_trending_tenor_gifs: {e}")
         return {"error": f"An unexpected error occurred: {str(e)}"}
 
-@mcp.tool()
+#@mcp.tool()
 async def get_tenor_categories(
     category_type: Annotated[
         Optional[str],
@@ -294,7 +294,7 @@ async def get_tenor_categories(
         logger.exception(f"Unexpected error in get_tenor_categories: {e}")
         return {"error": f"An unexpected error occurred: {str(e)}"}
 
-@mcp.tool()
+#@mcp.tool()
 async def get_tenor_autocomplete(
     partial_query: Annotated[
         str,
@@ -338,7 +338,7 @@ async def get_tenor_autocomplete(
         logger.exception(f"Unexpected error in get_tenor_autocomplete: {e}")
         return {"error": f"An unexpected error occurred: {str(e)}"}
 
-@mcp.tool()
+#@mcp.tool()
 async def get_tenor_search_suggestions(
     query: Annotated[
         str,
@@ -382,7 +382,7 @@ async def get_tenor_search_suggestions(
         logger.exception(f"Unexpected error in get_tenor_search_suggestions: {e}")
         return {"error": f"An unexpected error occurred: {str(e)}"}
 
-@mcp.tool()
+#@mcp.tool()
 async def get_tenor_trending_terms(
     limit: Annotated[
         Optional[int],
@@ -419,7 +419,7 @@ async def get_tenor_trending_terms(
         logger.exception(f"Unexpected error in get_tenor_trending_terms: {e}")
         return {"error": f"An unexpected error occurred: {str(e)}"}
 
-@mcp.tool()
+#@mcp.tool()
 async def get_random_tenor_gifs(
     query: Annotated[
         str,
@@ -487,7 +487,7 @@ async def get_random_tenor_gifs(
         logger.exception(f"Unexpected error in get_random_tenor_gifs: {e}")
         return {"error": f"An unexpected error occurred: {str(e)}"}
 
-@mcp.tool()
+#@mcp.tool()
 async def register_tenor_share(
     gif_id: Annotated[
         str,
@@ -534,6 +534,8 @@ async def register_tenor_share(
 
 def main():
     logger.info(f"Starting Tenor MCP Server on port {TENOR_MCP_SERVER_PORT} with log level {LOG_LEVEL_ENV}")
+    logger.info("Registered tools: search_tenor_gifs, get_trending_tenor_gifs")
+
     mcp.run(transport="streamable-http",
         host="0.0.0.0",
         port=TENOR_MCP_SERVER_PORT,
